@@ -1,11 +1,11 @@
-```
+---
 layout: post
 title: NGX_HTTP_MODULE 配置解析
 category: NGINX
 tags: NGINX,C
 keywords: NGINX,C
 description: 
-```
+---
 
 ## NGX_HTTP_MODULE 配置解析
 

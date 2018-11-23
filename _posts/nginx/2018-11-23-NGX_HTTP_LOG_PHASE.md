@@ -1,12 +1,11 @@
-```
+---
 layout: post
 title: NGX_HTTP_LOG_PHASE 阶段介绍
 category: NGINX
 tags: NGINX,C
 keywords: NGINX,C
 description: 
-
-```
+---
 
 ## phase_engine初始化
 

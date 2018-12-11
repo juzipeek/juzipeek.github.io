@@ -1,10 +1,10 @@
 ---
 layout: post
-title: GOA example-1
+title: Getting Started with goa
 category: Go
 tags: Go
-keywords: Go
-description:
+keywords: Go,Goa
+description:GOA example-1
 ---
 
 ## 概述

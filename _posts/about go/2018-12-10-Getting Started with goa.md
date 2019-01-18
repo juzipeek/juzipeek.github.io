@@ -83,7 +83,6 @@ var BottleMedia = MediaType("application/vnd.goa.example.bottle+json", func() {
 
 ```shell
 goagen bootstrap -d cellar/design
-
 ```
 
 生成的微服务目录结构应该如下：

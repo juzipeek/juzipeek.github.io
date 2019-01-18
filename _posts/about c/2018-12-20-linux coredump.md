@@ -43,7 +43,7 @@ sysctl -p
 可以在 `nginx.conf` 中配置 `coredump` 生成路径以及文件名：
 
 ```nginx.
-worker_rlimit_core 100m;
+worker_rlimit_core 200m;
 working_directory  /tmp;
 ```
 

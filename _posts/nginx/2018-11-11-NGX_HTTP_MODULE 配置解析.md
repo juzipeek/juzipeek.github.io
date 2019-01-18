@@ -465,7 +465,6 @@ ngx_http_add_location(ngx_conf_t *cf, ngx_queue_t **locations, ngx_http_core_loc
 
     return NGX_OK;
 }
-
 ```
 
 ### 五 总结

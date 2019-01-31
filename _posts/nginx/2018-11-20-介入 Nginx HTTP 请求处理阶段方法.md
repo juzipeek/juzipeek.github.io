@@ -31,8 +31,6 @@ ngx_http_empty_gif(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 
 ```
 
-
-
 ## 向 `ngx_http_core_main_conf_t->phases` 添加处理方法
 
 这种方法通过向 `NGX_HTTP_CONTENT_PHASE` 阶段的动态数组添加处理函数来实现，此时在 `NGX_HTTP_CONTENT_PHASE` 会调用本阶段的多个处理函数。如果处理函数返回 `NGX_DECLINED` 会调用下一个处理函数，返回其他值则会调用 `ngx_http_finalize_request` 方法结束请求。
@@ -59,8 +57,6 @@ ngx_http_autoindex_init(ngx_conf_t *cf)
 }
 
 ```
-
-
 
 ## 介入其他处理阶段
 

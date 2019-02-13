@@ -1,6 +1,6 @@
 ---
 layout: post
-title: Context 包简介
+title: 动态库中全局变量是否会有冲突
 category: C
 tags: C
 keywords: C

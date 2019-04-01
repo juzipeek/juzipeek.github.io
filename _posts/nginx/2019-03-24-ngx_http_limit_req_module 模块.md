@@ -630,6 +630,7 @@ ngx_http_limit_req_handler(ngx_http_request_t *r)
     }
 
     // 更新各个访问限制的超出值以及请求计数，计算需要的最大的延时时间
+    // 延时时间 = 超出值/允许平局速率
     delay = ngx_http_limit_req_account(limits, n, &excess, &limit);
     if (!delay) {
         return NGX_DECLINED;
@@ -654,8 +655,6 @@ ngx_http_limit_req_handler(ngx_http_request_t *r)
     return NGX_AGAIN;
 }
 ```
-
-超出值的计算逻辑，算法：TODO。
 
 ### 6. 延时后处理
 

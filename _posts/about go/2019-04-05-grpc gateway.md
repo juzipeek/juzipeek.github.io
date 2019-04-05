@@ -441,6 +441,8 @@ func (s *ServeMux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 `grpc-gateway` 的本质是启动另外一个 `HTTP` 服务，用来将 `HTTP` 协议请求转换为 `grpc` 格式请求。
 
+在 `ServeMux` 中 `Handler` 的存储结构为 `slice`，如果 `Handler` 过多会成为性能瓶颈。
+
 ## 六 其他说明
 
 ### `ServeMux`

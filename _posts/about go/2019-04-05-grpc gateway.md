@@ -65,149 +65,150 @@ go install github.com/golang/protobuf/protoc-gen-go
 
 ### 1.  定义 `gRPC` 服务
 
-    创建 `say_hi.proto` 文件，文件内容如下：
-    
-    ```go
-    syntax = "proto3";
-    
-    package endpoint;
-    
-    import "google/api/annotations.proto"; // 导入注解包
-    
-    message HiReq {
-        string name = 1;
+创建 `say_hi.proto` 文件，文件内容如下：
+
+```go
+syntax = "proto3";
+
+package endpoint;
+
+import "google/api/annotations.proto"; // 导入注解包
+
+message HiReq {
+	string name = 1;
+}
+
+message HiResp {
+	string echo = 2;
+}
+
+service SayHi {
+    rpc SayHi (HiReq) returns (HiResp) {
+        // SayHi 接口的 RESTful 格式选项
+        option (google.api.http) = {
+        	post: "/api/sayhi"
+        	body: "*"
+        };
     }
-    
-    message HiResp {
-        string echo = 2;
-    }
-    
-    service SayHi {
-        rpc SayHi (HiReq) returns (HiResp) {
-            // SayHi 接口的 RESTful 格式选项
-            option (google.api.http) = {
-                post: "/api/sayhi"
-                body: "*"
-            };
-        }
-    }
-    ```
+}
+```
 
 ### 2. 生成 `gRPC` 桩代码
 
-    ```bash
-    protoc -I/usr/local/include -I. \
-      -I/home/zhoucj/Project/go_play/src \
-      -I/home/zhoucj/Project/go_play/src/github.com/grpc-ecosystem/grpc-gateway/third_party/googleapis \
-      --go_out=plugins=grpc:. proto/say_hi.proto
-    ```
-    
-    执行完命令后会生成 `proto/say_hi.pb.go` 桩代码文件。
+```bash
+protoc -I/usr/local/include -I. \
+	-I/home/zhoucj/Project/go_play/src \
+	-I/home/zhoucj/Project/go_play/src/github.com/grpc-ecosystem/grpc-gateway/third_party/googleapis \
+	--go_out=plugins=grpc:. proto/say_hi.proto
+```
+
+执行完命令后会生成 `proto/say_hi.pb.go` 桩代码文件。
 
 ### 3. 生成反向代理服务
 
-    ```bash
-    protoc -I/usr/local/include -I. \
-      -I/home/zhoucj/Project/go_play/src \
-      -I/home/zhoucj/Project/go_play/src/github.com/grpc-ecosystem/grpc-gateway/third_party/googleapis \
-      --grpc-gateway_out=logtostderr=true:. \
-      proto/say_hi.proto
-    ```
-    执行完命令后将生成 `proto/sai_hi.pb.gw.go` 反向代理文件。
+```bash
+protoc -I/usr/local/include -I. \
+	-I/home/zhoucj/Project/go_play/src \
+	-I/home/zhoucj/Project/go_play/src/github.com/grpc-ecosystem/grpc-gateway/third_party/googleapis \
+	--grpc-gateway_out=logtostderr=true:. \
+	proto/say_hi.proto
+```
+
+执行完命令后将生成 `proto/sai_hi.pb.gw.go` 反向代理文件。
 
 ### 4.  实现服务端接口
 
-    ```go
-    package srv
-    
-    import (
-    	"context"
-    	"fmt"
-    	
-    	"grpc_gateway_play/endpoint/proto"
-    )
-    
-    func NewSayHiSrv() *SayHiSrv {
-    	return &SayHiSrv{}
-    }
-    
-    type SayHiSrv struct {
-    }
-    
-    // 实现接口
-    func (s *SayHiSrv) SayHi(c context.Context, req *endpoint.HiReq) (*endpoint.HiResp, error) {
-    	fmt.Println("request name:", req.Name)
-    	msg := fmt.Sprintf("%s nice to meet u.", req.Name)
-    	resp := &endpoint.HiResp{Echo: msg}
-    	fmt.Println(msg)
-    	return resp, nil
-    }
-    ```
-    以上只需按一般方式实现 `grpc server`。
+```go
+package srv
+
+import (
+	"context"
+	"fmt"
+	
+	"endpoint/proto"
+)
+
+func NewSayHiSrv() *SayHiSrv {
+	return &SayHiSrv{}
+}
+
+type SayHiSrv struct {
+}
+
+// 服务实现接口
+func (s *SayHiSrv) SayHi(c context.Context, req *endpoint.HiReq) (*endpoint.HiResp, error) {
+	fmt.Println("request name:", req.Name)
+	msg := fmt.Sprintf("%s nice to meet u.", req.Name)
+	resp := &endpoint.HiResp{Echo: msg}
+	fmt.Println(msg)
+	return resp, nil
+}
+```
+以上只需按一般方式实现 `grpc server`。
 
 ### 5. 将反向代理服务与 `grpc server` 关联
 
-    ```go
-    // file: main.go
-    package main
-    
-    import (
-    	"context"
-    	"fmt"
-    	"net"
-    	"net/http"
-    	
-    	gw "grpc_gateway_play/endpoint/proto"
-    	"grpc_gateway_play/srv"
-    	
-    	"github.com/grpc-ecosystem/grpc-gateway/runtime"
-    	"google.golang.org/grpc"
-    )
-    
-    const (
-    	grpcAddr = ":8090"
-    	httpAddr = ":8080"
-    )
-    
-    func main() {
-    	
-    	{
-    		// grpc server
-    		rpcServer := grpc.NewServer()
-    		// 注册 grpc 处理函数
-    		gw.RegisterSayHiServer(rpcServer, srv.NewSayHiSrv())
-    		
-    		lis, _ := net.Listen("tcp", grpcAddr)
-    		go rpcServer.Serve(lis)
-    	}
-    	
-    	{
-    		// grpc gateway server
-    		mux := runtime.NewServeMux()
-    		ctx, _ := context.WithCancel(context.Background())
-    		opts := []grpc.DialOption{grpc.WithInsecure()}
-    		
-    		// 注册反向代理服务
-    		err := gw.RegisterSayHiHandlerFromEndpoint(ctx, mux, grpcAddr, opts)
-    		if err != nil {
-    			fmt.Println("RegisterSayHiHandlerFromEndpoint error:", err.Error())
-    			return
-    		}
-    		// 启动反向代理服务
-    		http.ListenAndServe(httpAddr, mux)
-    	}
-    }
-    ```
+```go
+package main
+
+import (
+	"context"
+	"fmt"
+	"net"
+	"net/http"
+	
+	gw "endpoint/proto"
+	"srv"
+	
+	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"google.golang.org/grpc"
+)
+
+const (
+	grpcAddr = ":8090" // grpc 服务端口
+	httpAddr = ":8080" // http 协议端口
+)
+
+func main() {
+	
+	{
+		// grpc server
+		rpcServer := grpc.NewServer()
+		// 注册 grpc 处理函数
+		gw.RegisterSayHiServer(rpcServer, srv.NewSayHiSrv())
+		
+		lis, _ := net.Listen("tcp", grpcAddr)
+		go rpcServer.Serve(lis)
+	}
+	
+	{
+		// grpc gateway server
+		mux := runtime.NewServeMux()
+		ctx, _ := context.WithCancel(context.Background())
+		opts := []grpc.DialOption{grpc.WithInsecure()}
+		
+		// 注册反向代理服务
+		err := gw.RegisterSayHiHandlerFromEndpoint(ctx, mux, grpcAddr, opts)
+		if err != nil {
+			fmt.Println("RegisterSayHiHandlerFromEndpoint error:", err.Error())
+			return
+		}
+		// 启动反向代理服务
+		http.ListenAndServe(httpAddr, mux)
+	}
+}
+
+```
 
 ### 6. 编译测试
 
-    ```bash
-    go build main.go
-    curl -i -X POST -d '{"name":"jay"}' "http://localhost:8080/api/sayhi"
-    
-    # 可以看到有 8090、8080 两个端口被监听
-    netstat -ntl
-    ```
+```bash
+go build main.go
+curl -i -X POST -d '{"name":"jay"}' "http://localhost:8080/api/sayhi"
+
+# 可以看到有 8090、8080 两个端口被监听
+netstat -ntl
+```
 
 ## 四 深入`grpc-gateway` 内部实现
 

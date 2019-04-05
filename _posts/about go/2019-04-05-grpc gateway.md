@@ -9,19 +9,19 @@ description:
 
 ## 一 概述
 
-本文主要介绍 `grpc-gateway` 使用已经实现原理。
+本文主要介绍 `grpc-gateway` 使用以及实现原理。
 
 ## 二 grpc-gateway 基础
 
-**是什么**
+### 1. 是什么
 
-> `grpc-gateway` 是 [`protobuf`](https://developers.google.com/protocol-buffers/) 生成器 [`protoc`](https://github.com/protocolbuffers/protobuf) 的一个插件。
+`grpc-gateway` 是 [`protobuf`](https://developers.google.com/protocol-buffers/) 生成器 [`protoc`](https://github.com/protocolbuffers/protobuf) 的一个插件。
 
-**能做什么**
+### 2. 能做什么
 
-> 在 `protobuf` 的定义文件中添加 `google.api.http` 注解，`grpc-gateway` 可以读取 `protobuf` 定义文件并且生成反向代理服务，**用来将 `RESTful JSON` 接口转换为`gRPC` 格式**。
+在 `protobuf` 的定义文件中添加 `google.api.http` 注解，`grpc-gateway` 可以读取 `protobuf` 定义文件并且生成反向代理服务，**用来将 `RESTful JSON` 接口转换为`gRPC` 格式**。
 
-**安装**
+### 3. 安装
 
 `grpc-gateway` 依赖 `ProtocolBuffer`，需要先安装 `ProtoBuffer`：
 

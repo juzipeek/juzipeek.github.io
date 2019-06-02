@@ -29,13 +29,12 @@ description:
 
 示例
 
-```nginx.conf
+```nginx
 upstream memcached_backend {
     server 127.0.0.1:11211;
     server 10.0.0.2:11211;
 
     keepalive 32;
 }
-
 ```
 

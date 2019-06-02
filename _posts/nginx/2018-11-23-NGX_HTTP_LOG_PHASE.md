@@ -180,7 +180,7 @@ ngx_http_log_request(ngx_http_request_t *r)
         log_handler[i](r);
     }
 }
-
 ```
 
 而 `ngx_http_log_request` 在整个 `NGINX` 源码中有两个调用点 `ngx_http_finalize_request` 和 `ngx_http_free_request`。可以看到日志阶段是在给出应答后才进行调用，`NGINX` 提供的 `$request_time` 耗时是从接收到请求信息到给出应答，并且已被客户端接收的耗时。
+

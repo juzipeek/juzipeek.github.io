@@ -1,6 +1,6 @@
 ---
 layout: post
-title: OpenResty Api 1
+title: OpenResty Api - ngx.arg
 category: NGINX
 tags: NGINX,OpenResty,C,Lua
 keywords: NGINX,OpenResty,C,Lua

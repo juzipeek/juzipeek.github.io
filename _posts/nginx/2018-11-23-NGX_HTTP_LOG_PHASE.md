@@ -184,3 +184,90 @@ ngx_http_log_request(ngx_http_request_t *r)
 
 而 `ngx_http_log_request` 在整个 `NGINX` 源码中有两个调用点 `ngx_http_finalize_request` 和 `ngx_http_free_request`。可以看到日志阶段是在给出应答后才进行调用，`NGINX` 提供的 `$request_time` 耗时是从接收到请求信息到给出应答，并且已被客户端接收的耗时。
 
+## `ngx_http_log_module`
+
+```nginx
+Syntax:	access_log path [format [buffer=size] [gzip[=level]] [flush=time] [if=condition]];
+access_log off;
+Default:	access_log logs/access.log combined;
+Context:	http, server, location, if in location, limit_except
+```
+
+`access_log` 指令用来配置访问日志的路径、格式以及缓存。在 `format` 参数中可以使用 `syslog:` 前缀来指定使用 `syslog` 进行日志收集。如果在当前层级（`http{}`、`server{}`、`location{}` 等）使用 `access_log off` 配置，会在当前层级禁止日志输出。
+
+如果使用 `buffer` 或 `gzip` 参数，`access_log` 会对输出进行缓存。`buffer` 参数会指定缓存的大小，`flush` 参数可以指定 `access_log` 从缓存刷新到文件的时间。触发缓存内容写入磁盘的条件：
+
+- 在下次写 `log` 时内容无法在 `buffer` 中缓存；
+- `buffer` 中的内容以及比 `flush` 参数指定的时间更长；
+- `worker` 在重新打开文件或者关闭状态。
+
+如果配置了 `gzip` 参数，日志被写入磁盘钱会进行压缩，可以指定压缩等级（1-9，1 速度最快、压缩比低）。使用 `gzip` 时 `buffer` 参数默认为 64K 字节。
+
+其实日志目录参数 `path` 可以使用变量，不过使用变量后在每次写日志时会打开日志文件、写日志、关闭，因此不能使用 `buffer` 参数。使用 `open_log_file_cache` 可以缓存文件描述符。
+
+```nginx
+Syntax:	open_log_file_cache max=N [inactive=time] [min_uses=N] [valid=time];
+open_log_file_cache off;
+Default:	open_log_file_cache off;
+Context:	http, server, location
+```
+
+定义一个缓存，用来保存 `access_log` 的 `path` 配置中包含变量文件描述符。
+
+| 参数       | 含义                                                         | 备注            |
+| ---------- | ------------------------------------------------------------ | --------------- |
+| `max`      | 缓存可以存储文件描述符最多 `max` 个                          | 使用 `LRU` 踢除 |
+| `inactive` | 缓存中文件描述符允许不活跃时间，超过此时间会关闭             |                 |
+| `min_uses` | 与 `inactive` 配合，在 `inactive` 时间内使用次数小于 `min_uses` 值同样会关闭文件描述符。默认为 1。 |                 |
+| `valid`    | 文件名有效期设置；超过此时间需要检查文件名是否发生变化（因为使用变量） |                 |
+
+### 模块思路
+
+模块实现思路比较简单，模块在指令解析过程中会创建 `ngx_http_log_t` 配置结构，并保存在模块的 `main_conf` 中。在 `postconfiguration` 阶段会在 `NGX_HTTP_LOG_PHASE` 处理阶段添加处理函数。`postconfiguration` 阶段处理函数：
+
+```c
+static ngx_int_t
+ngx_http_log_init(ngx_conf_t *cf)
+{
+    ngx_str_t                  *value;
+    ngx_array_t                 a;
+    ngx_http_handler_pt        *h;
+    ngx_http_log_fmt_t         *fmt;
+    ngx_http_log_main_conf_t   *lmcf;
+    ngx_http_core_main_conf_t  *cmcf;
+
+    lmcf = ngx_http_conf_get_module_main_conf(cf, ngx_http_log_module);
+
+    if (lmcf->combined_used) {
+        if (ngx_array_init(&a, cf->pool, 1, sizeof(ngx_str_t)) != NGX_OK) {
+            return NGX_ERROR;
+        }
+
+        value = ngx_array_push(&a);
+        if (value == NULL) {
+            return NGX_ERROR;
+        }
+
+        *value = ngx_http_combined_fmt;
+        fmt = lmcf->formats.elts;
+
+        if (ngx_http_log_compile_format(cf, NULL, fmt->ops, &a, 0)
+            != NGX_CONF_OK)
+        {
+            return NGX_ERROR;
+        }
+    }
+
+    cmcf = ngx_http_conf_get_module_main_conf(cf, ngx_http_core_module);
+
+    h = ngx_array_push(&cmcf->phases[NGX_HTTP_LOG_PHASE].handlers);
+    if (h == NULL) {
+        return NGX_ERROR;
+    }
+
+    *h = ngx_http_log_handler;
+
+    return NGX_OK;
+}
+```
+

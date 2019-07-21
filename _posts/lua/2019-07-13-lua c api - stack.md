@@ -34,7 +34,7 @@ description:
 
 ### 1. 程序
 
-在示例中 `echo` 函数会返回所有调用参数，`sayhi` 会清空栈顶并返回一个 "hi" 字符串。
+在示例中 `echo` 函数会返回所有调用参数，在返回时栈底元素作为第一个返回值，栈顶元素作为最后一个返回值；`sayhi` 会清空栈顶并返回一个 "hi" 字符串。
 
 ```c
 // gcc -fPIC -I/usr/local/lua5.1.5/include -g -c stack.c

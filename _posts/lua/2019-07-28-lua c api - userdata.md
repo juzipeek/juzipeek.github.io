@@ -223,6 +223,7 @@ int lua_setmetatable (lua_State *L, int index);
 
 ## 五 参考资料
 
--[programming in lua](https://www.lua.org/pil/28.4.html)
+- [programming in lua](https://www.lua.org/pil/28.4.html)
 
--[lua 5.1 manual](https://www.lua.org/manual/5.1/manual.html)
+- [lua 5.1 manual](https://www.lua.org/manual/5.1/manual.html)
+

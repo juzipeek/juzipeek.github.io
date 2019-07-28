@@ -9,7 +9,7 @@ description:
 
 ## 一 概述
 
-在 `Lua` 中使用 `userdata` 表示 `C` 中的复杂数据类型（其实是一块内存区域），对于 `uerdata` 没有预定义的操作；`light userdata` 表示指针类型数据。
+在 `Lua` 中使用 `userdata` 表示 `C` 中的复杂数据类型（其实是一块内存区域），对于 `uerdata` 没有预定义的操作。`light userdata` 表示指针类型数据，并不需要创建（它是指针值），同时，**`light userdata` 不被 `gc` 管理**。`ligth userdata` 的主要用途是用户自己管理内存，避免 `gc` 管理内存。
 
 ## 二 使用 `userdata` 实现数组
 
@@ -226,4 +226,3 @@ int lua_setmetatable (lua_State *L, int index);
 -[programming in lua](https://www.lua.org/pil/28.4.html)
 
 -[lua 5.1 manual](https://www.lua.org/manual/5.1/manual.html)
-

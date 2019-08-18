@@ -350,6 +350,8 @@ done:
 
 `lua_isnumber`、`lua_isstring` 系列函数并不会判断参数类型，他们会进行类型转换，如果转换成功返回其值。这样的话，对于 `string` 类型可以调用 `lua_isnumber` 函数。
 
+`luaL_getn` 
+
 ## 四 参考资料
 
 - [lua_newuserdata](https://www.lua.org/pil/28.1.html)

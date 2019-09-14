@@ -582,3 +582,71 @@ ngx.shared.DICT:delete(key)
 length, err = ngx.shared.DICT:lpush(key, value)
 ```
 
+将指定的数值或字符串 `value` 插入基于共享内存的列表头，返回 `list` 中的元素数量。如果 `key` 不存在，则在执行当前函后会创建一个新的列表，当 `key` 已经存在但是非列表类型，错误提示为 `value not a list`。
+
+**`lpush` 不会删除未过期 `key-value`**。
+
+### 10. `rpush`
+
+```lua
+length, err = ngx.shared.DICT:rpush(key, value)
+```
+
+与 `lpush` 相似，只不过 `rpush` 在队列尾插入值。
+
+### 11. `lpop`
+
+```lua
+val, err = ngx.shared.DICT:lpop(key)
+```
+
+从 `list` 中返回并删除首个元素，如果 `key` 不存在返回 `nil`，如果 `key` 相应的 `value` 非 `list` 类型，返回 `value not a list`。
+
+### 12. `rpop`
+
+```lua
+val, err = ngx.shared.DICT:rpop(key)
+```
+
+从 `list` 中返回并删除末尾元素，如果 `key` 不存在返回 `nil`，如果 `key` 相应的 `value` 非 `list` 类型，返回 `value not a list`。
+
+### 13. `llen`
+
+```lua
+len, err = ngx.shared.DICT:llen(key)
+```
+
+计算 `list` 中元素数量，如果 `key` 不存在代表是空列表，返回 0。如果 `key` 的值非列表类型，返回 `nil` 以及相应错误描述。
+
+### 14. `ttl`
+
+```lua
+ttl, err = ngx.shared.DICT:ttl(key)
+```
+
+返回 `key` 剩余的 `TTL` 时间，以秒为单位，精确到毫秒。失败返回 `nil` 以及错误描述字符串。如果返回 `ttl` 为零，说明未设置超时时间。
+
+### 15. `expire`
+
+```lua
+success, err = ngx.shared.DICT:expire(key, exptime)
+```
+
+更新 `key` 的超时时间，返回布尔类型状态信息以及错误描述。参数 `exptime` 以秒为单位精确到毫秒。
+
+### 16. `flush_all|flush_expired`
+
+```lua
+ngx.shared.DICT:flush_all()
+flushed = ngx.shared.DICT:flush_expired(max_count?)
+```
+
+删除所有的 `key-value` 或者过期的 `key-value`。`flush_expired` 函数接受一个可选的 `max_count` 参数，用来控制删除过期 `key` 数量。默认为 0，会删除所有的过期 `key`。同时，`flush_expired` 函数会返回删除的 `key` 数量。
+
+### 17. `get_keys`
+
+```lua
+keys = ngx.shared.DICT:get_keys(max_count?)
+```
+
+返回一个包含共享内存（shm_zone）所有 `keys` 的 `Array Table`。可选数值参数 `max_count` 可以控制返回的 `key` 数量，默认为 1024 个。

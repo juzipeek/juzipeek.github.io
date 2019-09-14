@@ -1682,7 +1682,7 @@ ngx_http_lua_ngx_req_body_finish(lua_State *L)
 }
 ```
 
-## 六 请求 `socket`
+## 六 请求套接字
 
 ### 1. `ngx.req.socket`
 
@@ -1691,3 +1691,288 @@ ngx_http_lua_ngx_req_body_finish(lua_State *L)
 ```
 
 返回与客户端之间只读的 `cosocket`，只支持 `receive` 和 `receiveuntil` 函数。出错返回 `nil`，以及错误描述字符串。
+
+使用 `cosocket` 可以使用流方式读取请求包体，不过不能与 `ngx.req.read_body`、`ngx.req.discard_body` 混用（`lua_need_request_body` 指令同样不能使用）。**不支持 `chunked` 传输编码**。
+
+可选布尔参数 `raw` 用来控制是否返回原始套接字，如果为 `true` 将返回全双工的套接字，支持 `receive`、`receiveuntil`、`send` 函数。全双工的套接字需要保证无输出缓存数据（由 `ngx.say`、`ngx.print` 产生），可以在调用 `ngx.req.socket` 前调用 `ngx.flush(true)`  刷出待输出数据。
+
+**不支持 `HTTP2`、`SPDY` 协议**。
+
+```c
+static int
+ngx_http_lua_req_socket(lua_State *L)
+{
+    // ... omit other code
+    n = lua_gettop(L);
+    if (n == 0) {
+        raw = 0;
+    } else if (n == 1) {
+        raw = lua_toboolean(L, 1);
+        lua_pop(L, 1);
+    } else {
+        return luaL_error(L, "expecting zero arguments, but got %d",
+                          lua_gettop(L));
+    }
+
+    r = ngx_http_lua_get_req(L);
+
+    if (r != r->main) {
+        return luaL_error(L, "attempt to read the request body in a "
+                          "subrequest");
+    }
+
+#if nginx_version >= 1003009
+    if (!raw && r->headers_in.chunked) {
+        lua_pushnil(L);
+        lua_pushliteral(L, "chunked request bodies not supported yet");
+        return 2;
+    }
+#endif
+
+    ctx = ngx_http_get_module_ctx(r, ngx_http_lua_module);
+    if (ctx == NULL) {
+        return luaL_error(L, "no ctx found");
+    }
+
+    ngx_http_lua_check_context(L, ctx, NGX_HTTP_LUA_CONTEXT_REWRITE
+                               | NGX_HTTP_LUA_CONTEXT_ACCESS
+                               | NGX_HTTP_LUA_CONTEXT_CONTENT);
+
+    c = r->connection;
+
+    if (raw) {
+#if !defined(nginx_version) || nginx_version < 1003013
+        lua_pushnil(L);
+        lua_pushliteral(L, "nginx version too old");
+        return 2;
+#else
+        if (r->request_body) {
+            if (r->request_body->rest > 0) {
+                lua_pushnil(L);
+                lua_pushliteral(L, "pending request body reading in some "
+                                "other thread");
+                return 2;
+            }
+        } else {
+            rb = ngx_pcalloc(r->pool, sizeof(ngx_http_request_body_t));
+            if (rb == NULL) {
+                return luaL_error(L, "no memory");
+            }
+            r->request_body = rb;
+        }
+
+        if (c->buffered & NGX_HTTP_LOWLEVEL_BUFFERED) {
+            lua_pushnil(L);
+            lua_pushliteral(L, "pending data to write");
+            return 2;
+        }
+
+        if (ctx->buffering) {
+            lua_pushnil(L);
+            lua_pushliteral(L, "http 1.0 buffering");
+            return 2;
+        }
+
+        if (!r->header_sent) {
+            /* prevent other parts of nginx from sending out
+             * the response header */
+            r->header_sent = 1;
+        }
+
+        ctx->header_sent = 1;
+
+        dd("ctx acquired raw req socket: %d", ctx->acquired_raw_req_socket);
+
+        if (ctx->acquired_raw_req_socket) {
+            lua_pushnil(L);
+            lua_pushliteral(L, "duplicate call");
+            return 2;
+        }
+
+        ctx->acquired_raw_req_socket = 1;
+        r->keepalive = 0;
+        r->lingering_close = 1;
+#endif
+
+    } else {
+        /* request body reader */
+        if (r->request_body) {
+            lua_pushnil(L);
+            lua_pushliteral(L, "request body already exists");
+            return 2;
+        }
+
+        if (r->discard_body) {
+            lua_pushnil(L);
+            lua_pushliteral(L, "request body discarded");
+            return 2;
+        }
+
+        dd("req content length: %d", (int) r->headers_in.content_length_n);
+
+        if (r->headers_in.content_length_n <= 0) {
+            lua_pushnil(L);
+            lua_pushliteral(L, "no body");
+            return 2;
+        }
+
+        // 对 except 请求头处理
+        if (ngx_http_lua_test_expect(r) != NGX_OK) {
+            lua_pushnil(L);
+            lua_pushliteral(L, "test expect failed");
+            return 2;
+        }
+
+        /* prevent other request body reader from running */
+        rb = ngx_pcalloc(r->pool, sizeof(ngx_http_request_body_t));
+        if (rb == NULL) {
+            return luaL_error(L, "no memory");
+        }
+
+        rb->rest = r->headers_in.content_length_n;
+        r->request_body = rb;
+    }
+
+    // 元表: receive、receiveuntil、send、send 元表
+    lua_createtable(L, 3 /* narr */, 1 /* nrec */); /* the object */
+
+    if (raw) {
+        lua_pushlightuserdata(L, &ngx_http_lua_raw_req_socket_metatable_key);
+    } else {
+        lua_pushlightuserdata(L, &ngx_http_lua_req_socket_metatable_key);
+    }
+
+    lua_rawget(L, LUA_REGISTRYINDEX);
+    lua_setmetatable(L, -2);
+
+    // 创建 cosocket
+    u = lua_newuserdata(L, sizeof(ngx_http_lua_socket_tcp_upstream_t));
+    if (u == NULL) {
+        return luaL_error(L, "no memory");
+    }
+
+#if 1
+    lua_pushlightuserdata(L, &ngx_http_lua_downstream_udata_metatable_key);
+    lua_rawget(L, LUA_REGISTRYINDEX);
+    lua_setmetatable(L, -2);
+#endif
+
+    lua_rawseti(L, 1, SOCKET_CTX_INDEX);
+
+    ngx_memzero(u, sizeof(ngx_http_lua_socket_tcp_upstream_t));
+
+    if (raw) {
+        u->raw_downstream = 1;
+    } else {
+        u->body_downstream = 1;
+    }
+
+    coctx = ctx->cur_co_ctx;
+
+    u->request = r;
+
+    llcf = ngx_http_get_module_loc_conf(r, ngx_http_lua_module);
+    u->conf = llcf;
+    // 超时时间
+    u->read_timeout = u->conf->read_timeout;
+    u->connect_timeout = u->conf->connect_timeout;
+    u->send_timeout = u->conf->send_timeout;
+
+    // 清理函数
+    cln = ngx_http_lua_cleanup_add(r, 0);
+    if (cln == NULL) {
+        u->ft_type |= NGX_HTTP_LUA_SOCKET_FT_ERROR;
+        lua_pushnil(L);
+        lua_pushliteral(L, "no memory");
+        return 2;
+    }
+
+    cln->handler = ngx_http_lua_socket_tcp_cleanup;
+    cln->data = u;
+    u->cleanup = &cln->handler;
+
+    // 与客户端的网络连接
+    pc = &u->peer;
+
+    pc->log = c->log;
+    pc->log_error = NGX_ERROR_ERR;
+
+    pc->connection = c;
+
+    dd("setting data to %p", u);
+
+    coctx->data = u;
+    ctx->downstream = u;
+
+    // 删除读超时定时器
+    if (c->read->timer_set) {
+        ngx_del_timer(c->read);
+    }
+
+    if (raw) {
+        if (c->write->timer_set) {
+            // 删除写超时定时器
+            ngx_del_timer(c->write);
+        }
+    }
+
+    lua_settop(L, 1);
+    return 1;
+}
+```
+
+## 七 请求方法
+
+### 1. `ngx.req.get_method`
+
+```lua
+method_name = ngx.req.get_method()
+```
+
+获得当前请求的请求方法，返回值为字符串类型，子请求会返回相应子请求的方法。
+
+### 2. `ngx.req.set_method`
+
+```lua
+ngx.req.set_method(method_id)
+```
+
+设置当前请求的请求方法，参数为数值类型。可选参数：
+
+```lua
+ngx.HTTP_GET
+ngx.HTTP_HEAD
+ngx.HTTP_PUT
+ngx.HTTP_POST
+ngx.HTTP_DELETE
+ngx.HTTP_OPTIONS   (added in the v0.5.0rc24 release)
+ngx.HTTP_MKCOL     (added in the v0.8.2 release)
+ngx.HTTP_COPY      (added in the v0.8.2 release)
+ngx.HTTP_MOVE      (added in the v0.8.2 release)
+ngx.HTTP_PROPFIND  (added in the v0.8.2 release)
+ngx.HTTP_PROPPATCH (added in the v0.8.2 release)
+ngx.HTTP_LOCK      (added in the v0.8.2 release)
+ngx.HTTP_UNLOCK    (added in the v0.8.2 release)
+ngx.HTTP_PATCH     (added in the v0.8.2 release)
+ngx.HTTP_TRACE     (added in the v0.8.2 release)
+```
+
+## 八 请求时间
+
+### 1. `ngx.req.start_time`
+
+```lua
+secs = ngx.req.start_time()
+```
+
+返回当前请求创建的时间戳，浮点类型数值，精确到毫秒级。
+
+## 九 内部请求判断
+
+### 1. `ngx.req.is_internal`
+
+```lua
+is_internal = ngx.req.is_internal()
+```
+
+判断当前请求是否是内部请求。

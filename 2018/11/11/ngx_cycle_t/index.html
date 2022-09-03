@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html  lang="zh-CN" >
+    <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, minimum-scale=1, initial-scale=1, maximum-scale=5, viewport-fit=cover">
+    <title>ngx_cycle_t 中 connections 说明 | 自留地</title>
+    <meta name="description" content="ngx_cycle_t1234567891011121314151617181920212223242526272829303132333435363738394041424344454647typedef struct ngx_cycle_s           ngx_cycle_t;struct ngx_cycle_s &amp;#123;    void                  ****">
+<meta property="og:type" content="article">
+<meta property="og:title" content="ngx_cycle_t 中 connections 说明">
+<meta property="og:url" content="https://juzipeek.github.io/2018/11/11/ngx_cycle_t/index.html">
+<meta property="og:site_name" content="自留地">
+<meta property="og:description" content="ngx_cycle_t1234567891011121314151617181920212223242526272829303132333435363738394041424344454647typedef struct ngx_cycle_s           ngx_cycle_t;struct ngx_cycle_s &amp;#123;    void                  ****">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2018-11-10T16:00:00.000Z">
+<meta property="article:modified_time" content="2022-09-03T17:44:11.310Z">
+<meta property="article:author" content="zhou cheng jie">
+<meta property="article:tag" content="NGINX">
+<meta property="article:tag" content="C">
+<meta name="twitter:card" content="summary">
+
+    
+    <link rel="icon" href="/images/favicon.ico" type="image/x-icon">
+
+    
+<link rel="stylesheet" href="/css/common.min.css">
+
+
+
+    
+    
+    
+    
+        <link href="//cdn.jsdelivr.net/npm/lightgallery.js@1.1.3/dist/css/lightgallery.min.css" rel="stylesheet">
+    
+    
+    
+<link rel="stylesheet" href="/css/iconfont.min.css">
+
+    
+    <script>
+        (function(e,t,n,i,s,a,c){e[n]=e[n]||function(){(e[n].q=e[n].q||[]).push(arguments)}
+        ;a=t.createElement(i);c=t.getElementsByTagName(i)[0];a.async=true;a.src=s
+        ;c.parentNode.insertBefore(a,c)
+        })(window,document,"galite","script","https://cdn.jsdelivr.net/npm/ga-lite@2/dist/ga-lite.min.js");
+
+        galite('create', 'G-HFGFGEWD53', 'auto');
+        galite('send', 'pageview');
+    </script>
+    
+<meta name="generator" content="Hexo 5.4.2"></head>
+
+    <body>
+        <header class="header header-fixture">
+    <div class="profile-search-wrap flex sm:block">
+        
+        
+        <div class="profile sm:text-center md:px-1 lg:px-3 sm:pb-4 sm:pt-6">
+            <a id="avatar" role="link" href="https://github.com/juzipeek" class="inline-block lg:w-16 lg:h-16 w-8 h-8 m-2" target="_blank" rel="noopener" rel="noreferrer" >
+                <img src="/images/yellow.jpg" class="rounded-full" alt="avatar">
+            </a>
+            <h2 id="name" class="hidden lg:block">zhou cheng jie</h2>
+            <h3 id="title" class="hidden lg:block">coder</h3>
+            
+            <small id="location" class="hidden lg:block">
+                <i class="iconfont icon-map-icon"></i>
+                BeiJing, China
+            </small>
+            
+        </div>
+        
+        
+<div class="search flex-1 flex lg:inline-block sm:hidden lg:px-4 lg:mt-2 lg:mb-4 lg:w-full">
+    <form id="search-form" class="my-auto flex-1 lg:border lg:border-solid lg:border-gray-200">
+        <div class="input-group table bg-gray-100 lg:bg-white w-full">
+            <input id="search-input" type="text" placeholder="搜索" class="inline-block w-full bg-gray-100 lg:bg-white p-1">
+            <span class="table-cell">
+                <button name="search tigger button" disabled>
+                    <i class="iconfont icon-search m-2"></i>
+                </button>
+            </span>
+        </div>
+    </form>
+        
+<div id="content-json" data-placeholder="搜索" class="invisible hidden">/content.json</div>
+<script id="search-teamplate" type="text/html" data-path="/content.json">
+    <div>
+        <div class="search-header bg-gray-400">
+            <input id="actual-search-input" model="keyword" ref="input" class="inline-block w-full h-10 px-2 py-1" placeholder="搜索" type="text">
+        </div>
+        <div class="search-result bg-gray-200">
+            {{#each searchPosts}}
+            <a href="/{{ path }}" class="result-item block px-2 pb-3 mb-1 pt-1 hover:bg-indigo-100">
+                <i class="iconfont icon-file"></i>
+                <h1 class="result-title inline font-medium text-lg">{{ title }}</h1>
+                <p class="result-content text-gray-600 text-sm">{{{ text }}}</p>
+            </a>
+            {{/each}}
+        </div>
+    </div>
+</script>
+
+</div>
+
+
+        <button name="menu toogle button" id="menu-toggle-btn" class="block sm:hidden p-3" role="button" aria-expanded="false">
+            <i class="iconfont icon-hamburger"></i>
+        </button>
+    </div>
+    <nav id="menu-nav" class="hidden sm:flex flex-col">
+        
+        
+            <div class="menu-item menu-home" role="menuitem">
+                <a href="/.">
+                    <i class="iconfont icon-home" aria-hidden="true"></i>
+                    <span class="menu-title">首页</span>
+                </a>
+            </div>
+        
+        
+            <div class="menu-item menu-archives" role="menuitem">
+                <a href="/archives">
+                    <i class="iconfont icon-archive" aria-hidden="true"></i>
+                    <span class="menu-title">归档</span>
+                </a>
+            </div>
+        
+        
+            <div class="menu-item menu-categories" role="menuitem">
+                <a href="/categories">
+                    <i class="iconfont icon-folder" aria-hidden="true"></i>
+                    <span class="menu-title">分类</span>
+                </a>
+            </div>
+        
+        
+            <div class="menu-item menu-tags" role="menuitem">
+                <a href="/tags">
+                    <i class="iconfont icon-tag" aria-hidden="true"></i>
+                    <span class="menu-title">标签</span>
+                </a>
+            </div>
+        
+        
+            <div class="menu-item menu-about" role="menuitem">
+                <a href="/about">
+                    <i class="iconfont icon-cup" aria-hidden="true"></i>
+                    <span class="menu-title">关于</span>
+                </a>
+            </div>
+        
+        
+<div class="social-links flex sm:flex-col lg:hidden mt-5">
+    
+        <span class="social-item text-center">
+            <a target="_blank" rel="noopener" href="https://github.com/juzipeek">
+                <i class="iconfont social-icon icon-github"></i>
+                <span class="menu-title hidden lg:inline">menu.github</span>
+            </a>
+        </span>
+    
+</div>
+
+
+    </nav>
+</header>
+
+        <section class="main-section">
+            
+    <main class="flex-1 px-4 py-14 md:px-5 lg:px-8 lg:py-4 relative min-h-screen">
+    
+
+    <article class="content article article-archives article-type-list" itemscope="">
+        <header class="article-header">
+            
+    
+        <h1 class="article-title text-lg" itemprop="name">
+            ngx_cycle_t 中 connections 说明
+        </h1>
+    
+
+
+
+            <p class="article-meta mb-3 text-xs">
+                <span class="article-date">
+    <i class="iconfont icon-calendar-check"></i>
+	<a href="/2018/11/11/ngx_cycle_t/" class="article-date">
+	  <time datetime="2018-11-10T16:00:00.000Z" itemprop="datePublished">11月 11</time>
+	</a>
+</span>
+
+                
+    <span class="article-category">
+    <i class="iconfont icon-folder"></i>
+    <a class="article-category-link" href="/categories/NGINX/">NGINX</a>
+  </span>
+
+
+                
+    <span class="article-tags">
+    <i class="iconfont icon-tag"></i>
+    <a class="article-tag-none-link" href="/tags/C/" rel="tag">C</a>, <a class="article-tag-none-link" href="/tags/NGINX/" rel="tag">NGINX</a>
+  </span>
+
+
+                <span class="_partial/post-comment"><i class="icon icon-comment"></i>
+                    <a href="/2018/11/11/ngx_cycle_t/#comments" class="article-comment-link">
+                        评论
+                    </a>
+                </span>
+                
+    
+        <span class="post-wordcount" itemprop="wordCount">字数统计: 713(字)</span>
+    
+    
+        <span class="post-readcount" itemprop="timeRequired">阅读时长: 3(分)</span>
+    
+
+
+            </p>
+        </header>
+        <div class="marked-body article-body">
+            <h2 id="ngx-cycle-t"><a href="#ngx-cycle-t" class="headerlink" title="ngx_cycle_t"></a>ngx_cycle_t</h2><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">ngx_cycle_s</span>           <span class="title">ngx_cycle_t</span>;</span></span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">ngx_cycle_s</span> &#123;</span></span><br><span class="line">    <span class="type">void</span>                  ****conf_ctx;</span><br><span class="line">    <span class="type">ngx_pool_t</span>               *pool;</span><br><span class="line"></span><br><span class="line">    <span class="type">ngx_log_t</span>                *<span class="built_in">log</span>;</span><br><span class="line">    <span class="type">ngx_log_t</span>                 new_log;</span><br><span class="line"></span><br><span class="line">    <span class="type">ngx_uint_t</span>                log_use_stderr;  <span class="comment">/* unsigned  log_use_stderr:1; */</span></span><br><span class="line"></span><br><span class="line">    <span class="type">ngx_connection_t</span>        **files;</span><br><span class="line">    <span class="type">ngx_connection_t</span>         *free_connections;	<span class="comment">// 指向 connection 中的一个可用连接</span></span><br><span class="line">    <span class="type">ngx_uint_t</span>                free_connection_n;</span><br><span class="line"></span><br><span class="line">    <span class="type">ngx_module_t</span>            **modules;</span><br><span class="line">    <span class="type">ngx_uint_t</span>                modules_n;</span><br><span class="line">    <span class="type">ngx_uint_t</span>                modules_used;    <span class="comment">/* unsigned  modules_used:1; */</span></span><br><span class="line"></span><br><span class="line">    <span class="type">ngx_queue_t</span>               reusable_connections_queue;</span><br><span class="line">    <span class="type">ngx_uint_t</span>                reusable_connections_n;</span><br><span class="line"></span><br><span class="line">    <span class="type">ngx_array_t</span>               listening;</span><br><span class="line">    <span class="type">ngx_array_t</span>               paths;</span><br><span class="line"></span><br><span class="line">    <span class="type">ngx_array_t</span>               config_dump;</span><br><span class="line">    <span class="type">ngx_rbtree_t</span>              config_dump_rbtree;</span><br><span class="line">    <span class="type">ngx_rbtree_node_t</span>         config_dump_sentinel;</span><br><span class="line"></span><br><span class="line">    <span class="type">ngx_list_t</span>                open_files;</span><br><span class="line">    <span class="type">ngx_list_t</span>                shared_memory;</span><br><span class="line"></span><br><span class="line">    <span class="type">ngx_uint_t</span>                files_n;</span><br><span class="line"></span><br><span class="line">    <span class="type">ngx_uint_t</span>                connection_n;</span><br><span class="line">    <span class="type">ngx_connection_t</span>         *connections;	<span class="comment">// 与 free_connections 配合形成链表结构</span></span><br><span class="line">    <span class="type">ngx_event_t</span>              *read_events;</span><br><span class="line">    <span class="type">ngx_event_t</span>              *write_events;</span><br><span class="line"></span><br><span class="line">    <span class="type">ngx_cycle_t</span>              *old_cycle;</span><br><span class="line"></span><br><span class="line">    <span class="type">ngx_str_t</span>                 conf_file;</span><br><span class="line">    <span class="type">ngx_str_t</span>                 conf_param;</span><br><span class="line">    <span class="type">ngx_str_t</span>                 conf_prefix;</span><br><span class="line">    <span class="type">ngx_str_t</span>                 prefix;</span><br><span class="line">    <span class="type">ngx_str_t</span>                 lock_file;</span><br><span class="line">    <span class="type">ngx_str_t</span>                 hostname;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<h2 id="ngx-connection-s"><a href="#ngx-connection-s" class="headerlink" title="ngx_connection_s"></a>ngx_connection_s</h2><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">ngx_connection_s</span>      <span class="title">ngx_connection_t</span>;</span></span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">ngx_connection_s</span> &#123;</span></span><br><span class="line">    <span class="type">void</span>               *data;	<span class="comment">// 本结构的巧妙之处</span></span><br><span class="line">    <span class="type">ngx_event_t</span>        *read;</span><br><span class="line">    <span class="type">ngx_event_t</span>        *write;</span><br><span class="line"></span><br><span class="line">    <span class="type">ngx_socket_t</span>        fd;</span><br><span class="line"></span><br><span class="line">    ngx_recv_pt         recv;</span><br><span class="line">    ngx_send_pt         send;</span><br><span class="line">    ngx_recv_chain_pt   recv_chain;</span><br><span class="line">    ngx_send_chain_pt   send_chain;</span><br><span class="line"></span><br><span class="line">    <span class="type">ngx_listening_t</span>    *listening;</span><br><span class="line"></span><br><span class="line">    <span class="type">off_t</span>               sent;</span><br><span class="line"></span><br><span class="line">    <span class="type">ngx_log_t</span>          *<span class="built_in">log</span>;</span><br><span class="line"></span><br><span class="line">    <span class="type">ngx_pool_t</span>         *pool;</span><br><span class="line"></span><br><span class="line">    <span class="type">int</span>                 type;</span><br><span class="line"></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">sockaddr</span>    *<span class="title">sockaddr</span>;</span></span><br><span class="line">    <span class="type">socklen_t</span>           socklen;</span><br><span class="line">    <span class="type">ngx_str_t</span>           addr_text;</span><br><span class="line"></span><br><span class="line">    <span class="type">ngx_str_t</span>           proxy_protocol_addr;</span><br><span class="line">    <span class="type">in_port_t</span>           proxy_protocol_port;</span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="keyword">if</span> (NGX_SSL || NGX_COMPAT)</span></span><br><span class="line">    <span class="type">ngx_ssl_connection_t</span>  *ssl;</span><br><span class="line"><span class="meta">#<span class="keyword">endif</span></span></span><br><span class="line"></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">sockaddr</span>    *<span class="title">local_sockaddr</span>;</span></span><br><span class="line">    <span class="type">socklen_t</span>           local_socklen;</span><br><span class="line"></span><br><span class="line">    <span class="type">ngx_buf_t</span>          *buffer;</span><br><span class="line"></span><br><span class="line">    <span class="type">ngx_queue_t</span>         <span class="built_in">queue</span>;</span><br><span class="line"></span><br><span class="line">    <span class="type">ngx_atomic_uint_t</span>   number;</span><br><span class="line"></span><br><span class="line">    <span class="type">ngx_uint_t</span>          requests;</span><br><span class="line"></span><br><span class="line">    <span class="type">unsigned</span>            buffered:<span class="number">8</span>;</span><br><span class="line"></span><br><span class="line">    <span class="type">unsigned</span>            log_error:<span class="number">3</span>;     <span class="comment">/* ngx_connection_log_error_e */</span></span><br><span class="line"></span><br><span class="line">    <span class="type">unsigned</span>            timedout:<span class="number">1</span>;</span><br><span class="line">    <span class="type">unsigned</span>            error:<span class="number">1</span>;</span><br><span class="line">    <span class="type">unsigned</span>            destroyed:<span class="number">1</span>;</span><br><span class="line"></span><br><span class="line">    <span class="type">unsigned</span>            idle:<span class="number">1</span>;</span><br><span class="line">    <span class="type">unsigned</span>            reusable:<span class="number">1</span>;</span><br><span class="line">    <span class="type">unsigned</span>            close:<span class="number">1</span>;</span><br><span class="line">    <span class="type">unsigned</span>            shared:<span class="number">1</span>;</span><br><span class="line"></span><br><span class="line">    <span class="type">unsigned</span>            sendfile:<span class="number">1</span>;</span><br><span class="line">    <span class="type">unsigned</span>            sndlowat:<span class="number">1</span>;</span><br><span class="line">    <span class="type">unsigned</span>            tcp_nodelay:<span class="number">2</span>;   <span class="comment">/* ngx_connection_tcp_nodelay_e */</span></span><br><span class="line">    <span class="type">unsigned</span>            tcp_nopush:<span class="number">2</span>;    <span class="comment">/* ngx_connection_tcp_nopush_e */</span></span><br><span class="line"></span><br><span class="line">    <span class="type">unsigned</span>            need_last_buf:<span class="number">1</span>;</span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="keyword">if</span> (NGX_HAVE_AIO_SENDFILE || NGX_COMPAT)</span></span><br><span class="line">    <span class="type">unsigned</span>            busy_count:<span class="number">2</span>;</span><br><span class="line"><span class="meta">#<span class="keyword">endif</span></span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="keyword">if</span> (NGX_THREADS || NGX_COMPAT)</span></span><br><span class="line">    <span class="type">ngx_thread_task_t</span>  *sendfile_task;</span><br><span class="line"><span class="meta">#<span class="keyword">endif</span></span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p>​    NGINX 需要处理大量的网络连接，如何当有新的请求过来需要创建给它分配空间进行存储，当连接断开时需要将资源进行回收（释放或重置继续使用）。如果对每个连接都进行创建、释放存储资源会导致很多的内存申请释放调用导致性能降低。如果使用固定数组来保存连接信息，虽然避免了重复内存的申请释放调用，但是查找数组中使用、未使用连接会成为瓶颈（数组遍历）。NGINX 中使用了巧妙的方法解决这个问题，使用固定内存来存储连接信息，同时将每个节点通过一个 <code>data</code> 指针串联起来，这样连接表就成为一个链表。cycle 变量持有链表中第一可用的节点，当需要申请新的连接结构体时链表将当前节点给用户使用并前进；当需要释放连接时，将链表头作为释放节点的后继节点，链表头指向释放的节点。</p>
+<h2 id="connections-free-connections-使用"><a href="#connections-free-connections-使用" class="headerlink" title="connections/free_connections 使用"></a>connections/free_connections 使用</h2><p>​    connections 在 <code>ngx_event_process_init</code> 中初始化，示例代码：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">ngx_uint_t</span>           m, i;</span><br><span class="line"><span class="type">ngx_connection_t</span>    *c, *next, *old;</span><br><span class="line"><span class="comment">// 内存分配</span></span><br><span class="line">cycle-&gt;connections = ngx_alloc(<span class="keyword">sizeof</span>(<span class="type">ngx_connection_t</span>) * cycle-&gt;connection_n, cycle-&gt;<span class="built_in">log</span>);</span><br><span class="line"></span><br><span class="line">c = cycle-&gt;connections;</span><br><span class="line">i = cycle-&gt;connection_n;</span><br><span class="line">next = <span class="literal">NULL</span>;</span><br><span class="line"><span class="comment">// 链表建立</span></span><br><span class="line"><span class="keyword">do</span> &#123;</span><br><span class="line">    i--;</span><br><span class="line"></span><br><span class="line">    c[i].data = next;</span><br><span class="line">    c[i].read = &amp;cycle-&gt;read_events[i];</span><br><span class="line">    c[i].write = &amp;cycle-&gt;write_events[i];</span><br><span class="line">    c[i].fd = (<span class="type">ngx_socket_t</span>) <span class="number">-1</span>;</span><br><span class="line"></span><br><span class="line">    next = &amp;c[i];</span><br><span class="line">&#125; <span class="keyword">while</span> (i);</span><br><span class="line"></span><br><span class="line"><span class="comment">// free_connections 为链表头</span></span><br><span class="line">cycle-&gt;free_connections = next;</span><br><span class="line">cycle-&gt;free_connection_n = cycle-&gt;connection_n;</span><br></pre></td></tr></table></figure>
+
+<p>​    获取连接 <code>ngx_get_connection</code>，从链表中取可用节点：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">ngx_connection_t</span>  *c;</span><br><span class="line"></span><br><span class="line">c = ngx_cycle-&gt;free_connections;			<span class="comment">// 取节点值</span></span><br><span class="line">ngx_cycle-&gt;free_connections = c-&gt;data;		<span class="comment">// 链表头前进</span></span><br><span class="line">ngx_cycle-&gt;free_connection_n--;</span><br></pre></td></tr></table></figure>
+
+<p>​    释放连接 <code>ngx_free_connection</code>，将节点归还给链表：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">void</span></span><br><span class="line"><span class="title function_">ngx_free_connection</span><span class="params">(<span class="type">ngx_connection_t</span> *c)</span></span><br><span class="line">&#123;</span><br><span class="line">    c-&gt;data = ngx_cycle-&gt;free_connections;</span><br><span class="line">    ngx_cycle-&gt;free_connections = c;</span><br><span class="line">    ngx_cycle-&gt;free_connection_n++;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 可用忽略</span></span><br><span class="line">    <span class="keyword">if</span> (ngx_cycle-&gt;files &amp;&amp; ngx_cycle-&gt;files[c-&gt;fd] == c) &#123;</span><br><span class="line">        ngx_cycle-&gt;files[c-&gt;fd] = <span class="literal">NULL</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+        </div>
+        
+
+    </article>
+    
+    <section id="comments">
+        
+    </section>
+
+
+    
+
+</main>
+
+
+<aside style="" id="sidebar" class="aside aside-fixture">
+    <div class="toc-sidebar">
+        <nav id="toc" class="article-toc">
+            <h3 class="toc-title">文章目录</h3>
+            <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#ngx-cycle-t"><span class="toc-number">1.</span> <span class="toc-text">ngx_cycle_t</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#ngx-connection-s"><span class="toc-number">2.</span> <span class="toc-text">ngx_connection_s</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#connections-free-connections-%E4%BD%BF%E7%94%A8"><span class="toc-number">3.</span> <span class="toc-text">connections&#x2F;free_connections 使用</span></a></li></ol>
+        </nav>
+    </div>
+</aside>
+
+
+
+
+
+        </section>
+        <footer class="hidden lg:block fixed bottom-0 left-0 sm:w-1/12 lg:w-1/6 bg-gray-100 z-40">
+    
+    <div class="footer-social-links">
+        
+            <a target="_blank" rel="noopener" href="https://github.com/juzipeek">
+                <i class="iconfont icon-github"></i>
+            </a>
+        
+    </div>
+    
+    
+</footer>
+
+        <div id="mask" class="hidden mask fixed inset-0 bg-gray-900 opacity-75 z-40"></div>
+        <div id="search-view-container" class="hidden shadow-xl"></div>
+        
+<script src="/js/dom-event.min.js"></script>
+
+
+
+<script src="/js/local-search.min.js"></script>
+
+
+
+    <script src="//cdn.jsdelivr.net/npm/lightgallery.js@1.1.3/dist/js/lightgallery.min.js"></script>
+    
+<script src="/js/light-gallery.min.js"></script>
+
+
+
+
+
+
+    </body>
+</html>

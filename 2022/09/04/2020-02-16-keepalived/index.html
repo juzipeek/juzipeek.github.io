@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html  lang="zh-CN" >
+    <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, minimum-scale=1, initial-scale=1, maximum-scale=5, viewport-fit=cover">
+    <title>keepalived 学习 | 自留地</title>
+    <meta name="description" content="keepalived 学习">
+<meta property="og:type" content="article">
+<meta property="og:title" content="keepalived 学习">
+<meta property="og:url" content="https://juzipeek.github.io/2022/09/04/2020-02-16-keepalived/index.html">
+<meta property="og:site_name" content="自留地">
+<meta property="og:description" content="keepalived 学习">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2022-09-03T17:44:11.308Z">
+<meta property="article:modified_time" content="2022-09-03T17:44:11.309Z">
+<meta property="article:author" content="zhou cheng jie">
+<meta property="article:tag" content="network">
+<meta property="article:tag" content="keepalived">
+<meta property="article:tag" content="ip">
+<meta property="article:tag" content="multi-cast">
+<meta name="twitter:card" content="summary">
+
+    
+    <link rel="icon" href="/images/favicon.ico" type="image/x-icon">
+
+    
+<link rel="stylesheet" href="/css/common.min.css">
+
+
+
+    
+    
+    
+    
+        <link href="//cdn.jsdelivr.net/npm/lightgallery.js@1.1.3/dist/css/lightgallery.min.css" rel="stylesheet">
+    
+    
+    
+<link rel="stylesheet" href="/css/iconfont.min.css">
+
+    
+    <script>
+        (function(e,t,n,i,s,a,c){e[n]=e[n]||function(){(e[n].q=e[n].q||[]).push(arguments)}
+        ;a=t.createElement(i);c=t.getElementsByTagName(i)[0];a.async=true;a.src=s
+        ;c.parentNode.insertBefore(a,c)
+        })(window,document,"galite","script","https://cdn.jsdelivr.net/npm/ga-lite@2/dist/ga-lite.min.js");
+
+        galite('create', 'G-HFGFGEWD53', 'auto');
+        galite('send', 'pageview');
+    </script>
+    
+<meta name="generator" content="Hexo 5.4.2"></head>
+
+    <body>
+        <header class="header header-fixture">
+    <div class="profile-search-wrap flex sm:block">
+        
+        
+        <div class="profile sm:text-center md:px-1 lg:px-3 sm:pb-4 sm:pt-6">
+            <a id="avatar" role="link" href="https://github.com/juzipeek" class="inline-block lg:w-16 lg:h-16 w-8 h-8 m-2" target="_blank" rel="noopener" rel="noreferrer" >
+                <img src="/images/yellow.jpg" class="rounded-full" alt="avatar">
+            </a>
+            <h2 id="name" class="hidden lg:block">zhou cheng jie</h2>
+            <h3 id="title" class="hidden lg:block">coder</h3>
+            
+            <small id="location" class="hidden lg:block">
+                <i class="iconfont icon-map-icon"></i>
+                BeiJing, China
+            </small>
+            
+        </div>
+        
+        
+<div class="search flex-1 flex lg:inline-block sm:hidden lg:px-4 lg:mt-2 lg:mb-4 lg:w-full">
+    <form id="search-form" class="my-auto flex-1 lg:border lg:border-solid lg:border-gray-200">
+        <div class="input-group table bg-gray-100 lg:bg-white w-full">
+            <input id="search-input" type="text" placeholder="搜索" class="inline-block w-full bg-gray-100 lg:bg-white p-1">
+            <span class="table-cell">
+                <button name="search tigger button" disabled>
+                    <i class="iconfont icon-search m-2"></i>
+                </button>
+            </span>
+        </div>
+    </form>
+        
+<div id="content-json" data-placeholder="搜索" class="invisible hidden">/content.json</div>
+<script id="search-teamplate" type="text/html" data-path="/content.json">
+    <div>
+        <div class="search-header bg-gray-400">
+            <input id="actual-search-input" model="keyword" ref="input" class="inline-block w-full h-10 px-2 py-1" placeholder="搜索" type="text">
+        </div>
+        <div class="search-result bg-gray-200">
+            {{#each searchPosts}}
+            <a href="/{{ path }}" class="result-item block px-2 pb-3 mb-1 pt-1 hover:bg-indigo-100">
+                <i class="iconfont icon-file"></i>
+                <h1 class="result-title inline font-medium text-lg">{{ title }}</h1>
+                <p class="result-content text-gray-600 text-sm">{{{ text }}}</p>
+            </a>
+            {{/each}}
+        </div>
+    </div>
+</script>
+
+</div>
+
+
+        <button name="menu toogle button" id="menu-toggle-btn" class="block sm:hidden p-3" role="button" aria-expanded="false">
+            <i class="iconfont icon-hamburger"></i>
+        </button>
+    </div>
+    <nav id="menu-nav" class="hidden sm:flex flex-col">
+        
+        
+            <div class="menu-item menu-home" role="menuitem">
+                <a href="/.">
+                    <i class="iconfont icon-home" aria-hidden="true"></i>
+                    <span class="menu-title">首页</span>
+                </a>
+            </div>
+        
+        
+            <div class="menu-item menu-archives" role="menuitem">
+                <a href="/archives">
+                    <i class="iconfont icon-archive" aria-hidden="true"></i>
+                    <span class="menu-title">归档</span>
+                </a>
+            </div>
+        
+        
+            <div class="menu-item menu-categories" role="menuitem">
+                <a href="/categories">
+                    <i class="iconfont icon-folder" aria-hidden="true"></i>
+                    <span class="menu-title">分类</span>
+                </a>
+            </div>
+        
+        
+            <div class="menu-item menu-tags" role="menuitem">
+                <a href="/tags">
+                    <i class="iconfont icon-tag" aria-hidden="true"></i>
+                    <span class="menu-title">标签</span>
+                </a>
+            </div>
+        
+        
+            <div class="menu-item menu-about" role="menuitem">
+                <a href="/about">
+                    <i class="iconfont icon-cup" aria-hidden="true"></i>
+                    <span class="menu-title">关于</span>
+                </a>
+            </div>
+        
+        
+<div class="social-links flex sm:flex-col lg:hidden mt-5">
+    
+        <span class="social-item text-center">
+            <a target="_blank" rel="noopener" href="https://github.com/juzipeek">
+                <i class="iconfont social-icon icon-github"></i>
+                <span class="menu-title hidden lg:inline">menu.github</span>
+            </a>
+        </span>
+    
+</div>
+
+
+    </nav>
+</header>
+
+        <section class="main-section">
+            
+    <main class="flex-1 px-4 py-14 md:px-5 lg:px-8 lg:py-4 relative min-h-screen">
+    
+
+    <article class="content article article-archives article-type-list" itemscope="">
+        <header class="article-header">
+            
+    
+        <h1 class="article-title text-lg" itemprop="name">
+            keepalived 学习
+        </h1>
+    
+
+
+
+            <p class="article-meta mb-3 text-xs">
+                <span class="article-date">
+    <i class="iconfont icon-calendar-check"></i>
+	<a href="/2022/09/04/2020-02-16-keepalived/" class="article-date">
+	  <time datetime="2022-09-03T17:44:11.308Z" itemprop="datePublished">9月 4</time>
+	</a>
+</span>
+
+                
+    <span class="article-category">
+    <i class="iconfont icon-folder"></i>
+    <a class="article-category-link" href="/categories/Network/">Network</a>
+  </span>
+
+
+                
+    <span class="article-tags">
+    <i class="iconfont icon-tag"></i>
+    <a class="article-tag-none-link" href="/tags/ip/" rel="tag">ip</a>, <a class="article-tag-none-link" href="/tags/keepalived/" rel="tag">keepalived</a>, <a class="article-tag-none-link" href="/tags/multi-cast/" rel="tag">multi-cast</a>, <a class="article-tag-none-link" href="/tags/network/" rel="tag">network</a>
+  </span>
+
+
+                <span class="_partial/post-comment"><i class="icon icon-comment"></i>
+                    <a href="/2022/09/04/2020-02-16-keepalived/#comments" class="article-comment-link">
+                        评论
+                    </a>
+                </span>
+                
+    
+        <span class="post-wordcount" itemprop="wordCount">字数统计: 1.3k(字)</span>
+    
+    
+        <span class="post-readcount" itemprop="timeRequired">阅读时长: 5(分)</span>
+    
+
+
+            </p>
+        </header>
+        <div class="marked-body article-body">
+            <h2 id="一-概述"><a href="#一-概述" class="headerlink" title="一 概述"></a>一 概述</h2><p>keepalived 提供了三个主要功能:管理 LVS, LVS 集群健康检查, 实现系统网络服务高可用性. Keepalived 是通过 VRRP (Virtual Router Redundancy Protocol, 虚拟路由器冗余协议）来实现网络高可用的, 当 Master 节点不可用时 Backup 节点会接管 <strong>IP 资源</strong>。当 Master 节点恢复时, Backup 节点会释放结果的 IP 资源.</p>
+<h3 id="1-安装启动"><a href="#1-安装启动" class="headerlink" title="1. 安装启动"></a>1. 安装启动</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="variable">$cd</span> keepalived</span><br><span class="line">$./build_setup</span><br><span class="line">$./configure --prefix=/usr/local/keepalived</span><br><span class="line"><span class="variable">$make</span></span><br><span class="line"><span class="variable">$sudo</span> make install</span><br><span class="line"><span class="variable">$sudo</span> /usr/local/keepalived/sbin/keepalived -G -D -l -f /usr/local/keepalived/etc/keepalived/keepalived.conf</span><br></pre></td></tr></table></figure>
+
+<h2 id="二-虚拟路由冗余协议"><a href="#二-虚拟路由冗余协议" class="headerlink" title="二 虚拟路由冗余协议"></a>二 虚拟路由冗余协议</h2><p>VRRP (Virtual Router Redundancy Protocol 虚拟路由器冗余协议), 是为消除在静态缺省路由环境下的缺省路由器单点故障引起的网络失效而设计的主备模式的协议，使得在发生故障而进行设备功能切换时可以不影响内外数据通信，不需要再修改内部网络的网络参数。VRRP 协议具有 IP地址备份、优先路由选择功能。</p>
+<p>VRRP 协议将两台或多台路由器设备虚拟成一个设备, 对外提供虚拟路由器 IP(一个或多个). 而在路由器组内部, 如果实际拥有这个对外 IP 的路由器如果工作正常的话就是 MASTER, 或者是通过算法选举产生，MASTER 实现针对虚拟路由器 IP 的各种网络功能，如 ARP 请求, ICMP, 以及数据的转发等; 其他设备不拥有该 IP, 状态是 BACKUP, 除了接收 MASTER 的 VRRP 状态通告信息外, 不执行对外的网络功能. 当主机失效时, BACKUP 将接管原先 MASTER 的网络功能.</p>
+<p>配置 VRRP 协议时需要配置每个路由器的虚拟路由器 ID(VRID)和优先权值. 使用 VRID 将路由器进行分组, 具有相同 VRID 值的路由器为同一个组, VRID是一个 0～255 的正整数. 同一组中的路由器通过使用优先权值来选举 MASTER, 优先权大者为 MASTER, 优先权也是一个 0～255 的正整数。如果优先权相同, IP 地址大的为 Master.</p>
+<p>VRRP 协议使用多播数据来传输 VRRP 数据, VRRP 数据使用特殊的虚拟源 MAC 地址发送数据而不是自身网卡的 MAC 地址. VRRP 运行时只有 MASTER 路由器定时发送 VRRP 通告信息, 表示 MASTER 工作正常. BACKUP 只接收 VRRP 数据, 不发送数据, 如果一定时间内没有接收到 MASTER 的通告信息, 各 BACKUP 将宣告自己成为 MASTER, 发送通告信息, 重新进行 MASTER 选举状态.</p>
+<p>VRRP 使用 <code>224.0.0.18</code> 作为广播地址, 使用 IP 协议传输数据. VRRP 协议格式:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"> 0                   1                   2                   3</span><br><span class="line"> 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1</span><br><span class="line">+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+</span><br><span class="line">|Version| Type  | Virtual Rtr ID|   Priority    | Count IP Addrs|</span><br><span class="line">+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+</span><br><span class="line">|   Auth Type   |   Adver Int   |          Checksum             |</span><br><span class="line">+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+</span><br><span class="line">|                         IP Address (1)                        |</span><br><span class="line">+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+</span><br><span class="line">|                            .                                  |</span><br><span class="line">|                            .                                  |</span><br><span class="line">|                            .                                  |</span><br><span class="line">+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+</span><br><span class="line">|                         IP Address (n)                        |</span><br><span class="line">+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+</span><br><span class="line">|                     Authentication Data (1)                   |</span><br><span class="line">+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+</span><br><span class="line">|                     Authentication Data (2)                   |</span><br><span class="line">+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+</span><br></pre></td></tr></table></figure>
+
+<h3 id="1-单播"><a href="#1-单播" class="headerlink" title="1. 单播"></a>1. 单播</h3><p>除了组播外, keepalived 支持使用单播进行工作.需要修改配置文件关闭 <code>vrrp_strict</code> 选项, 并配置单播地址.</p>
+<h2 id="三-实现"><a href="#三-实现" class="headerlink" title="三 实现"></a>三 实现</h2><p>keepalived 中包含三个主要模块: core, check, vrrp. core 是程序运行主模块, 用来启动管理 check, vrrp 进程, 当 check, vrrp 进程挂掉时拉起进程. check 用来对 realserver 进行检测. vrrp 进行用来实现 vrrp 逻辑.</p>
+<p>keepalived 中使用红黑树进行定时器管理, epoll 来进行网络事件处理. 在 <code>vrrp_dispatcher_init</code> 函数中调用 <code>vrrp_register_workers</code> 注册所有 <code>socket</code> 的读事件处理函数为 <code>vrrp_read_dispatcher_thread</code>, 用来处理 VRRP 通知消息, <strong>最后会增加定时器触发 <code>vrrp_read_dispatcher_thread</code>, 进行 VRRP 超时检查</strong>.</p>
+<p>VRRP 子进程启动时, 会调用 <code>vrrp_restore_interfaces_startup</code> 函数, 依次对所有的 VIP 接口调用 <code>vrrp_restore_interface</code> 函数进行 VRRP 恢复. 在 <code>start_vrrp</code> 中会添加 <code>vrrp_dispatcher_init</code> 定时器, 触发发送 VRRP 通告.</p>
+<h3 id="1-调试"><a href="#1-调试" class="headerlink" title="1. 调试"></a>1. 调试</h3><p>使用 <code>gdb</code> 调试 keepalived 来分析源码. 因为会 <code>fork</code> 子进程进行处理, 需要使用 <code>set follow-fork-mode child</code> 配置在 <code>fork</code> 时调试子进程.</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">sudo gdb /usr/local/keepalived/sbin/keepalived</span><br><span class="line">set args -n -G -D -l -f /usr/local/keepalived/etc/keepalived/keepalived.conf</span><br><span class="line"># 在 start_vrrp_child 函数内设置跟随子进程</span><br><span class="line">set follow-fork-mode child</span><br></pre></td></tr></table></figure>
+
+<h3 id="2-发送通告"><a href="#2-发送通告" class="headerlink" title="2. 发送通告"></a>2. 发送通告</h3><p><code>vrrp_send_pkt</code> 函数实现通告发送, <strong>使用配置的组播地址(224.0.0.18)作为目的地址</strong>.</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">static</span> <span class="type">ssize_t</span></span><br><span class="line"><span class="title function_">vrrp_send_pkt</span><span class="params">(<span class="type">vrrp_t</span> * vrrp, <span class="type">unicast_peer_t</span> *peer)</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">sockaddr_storage</span> *<span class="title">src</span> =</span> &amp;vrrp-&gt;saddr;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">msghdr</span> <span class="title">msg</span>;</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">iovec</span> <span class="title">iov</span>;</span></span><br><span class="line">    <span class="type">char</span> cbuf[<span class="number">256</span>];</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* Build the message data */</span></span><br><span class="line">    <span class="built_in">memset</span>(&amp;msg, <span class="number">0</span>, <span class="keyword">sizeof</span>(msg));</span><br><span class="line">    msg.msg_iov = &amp;iov;</span><br><span class="line">    msg.msg_iovlen = <span class="number">1</span>;</span><br><span class="line">    <span class="comment">// 发送的 IP 数据包(datagram)内容</span></span><br><span class="line">    iov.iov_base = vrrp-&gt;send_buffer;</span><br><span class="line">    iov.iov_len = vrrp-&gt;send_buffer_size;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* Unicast sending path */</span></span><br><span class="line">    <span class="keyword">if</span> (peer &amp;&amp; peer-&gt;address.ss_family == AF_INET) &#123;</span><br><span class="line">        msg.msg_name = &amp;peer-&gt;address;</span><br><span class="line">        msg.msg_namelen = <span class="keyword">sizeof</span>(<span class="keyword">struct</span> sockaddr_in);</span><br><span class="line">    &#125; <span class="keyword">else</span> <span class="keyword">if</span> (peer &amp;&amp; peer-&gt;address.ss_family == AF_INET6) &#123;</span><br><span class="line">        msg.msg_name = &amp;peer-&gt;address;</span><br><span class="line">        msg.msg_namelen = <span class="keyword">sizeof</span>(<span class="keyword">struct</span> sockaddr_in6);</span><br><span class="line">        vrrp_build_ancillary_data(&amp;msg, cbuf, src, vrrp);</span><br><span class="line">    &#125; <span class="keyword">else</span> <span class="keyword">if</span> (vrrp-&gt;family == AF_INET) &#123; <span class="comment">/* Multicast sending path */</span></span><br><span class="line">        msg.msg_name = &amp;global_data-&gt;vrrp_mcast_group4; <span class="comment">// 配置的组播地址</span></span><br><span class="line">        msg.msg_namelen = <span class="keyword">sizeof</span>(<span class="keyword">struct</span> sockaddr_in);</span><br><span class="line">    &#125; <span class="keyword">else</span> <span class="keyword">if</span> (vrrp-&gt;family == AF_INET6) &#123;</span><br><span class="line">        msg.msg_name = &amp;global_data-&gt;vrrp_mcast_group6;</span><br><span class="line">        msg.msg_namelen = <span class="keyword">sizeof</span>(<span class="keyword">struct</span> sockaddr_in6);</span><br><span class="line">        vrrp_build_ancillary_data(&amp;msg, cbuf, src, vrrp);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* Send the packet */</span></span><br><span class="line">    <span class="keyword">return</span> sendmsg(vrrp-&gt;sockets-&gt;fd_out, &amp;msg, (peer) ? <span class="number">0</span> : MSG_DONTROUTE);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="参考文档"><a href="#参考文档" class="headerlink" title="参考文档"></a>参考文档</h2><ul>
+<li><a target="_blank" rel="noopener" href="https://www.keepalived.org/manpage.html">keepalived manpage</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.keepalived.org/doc/configuration_synopsis.html">keepalived docs</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.cnblogs.com/clsn/p/8052649.html">keepalived 实现服务高可用</a></li>
+<li><a target="_blank" rel="noopener" href="https://blog.csdn.net/u010391029/article/details/48311699">Keepalived原理与实战精讲–VRRP协议</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.ibm.com/developerworks/cn/linux/l-cn-gdbmp/index.html">使用 GDB 调试多进程程序</a></li>
+</ul>
+
+        </div>
+        
+
+    </article>
+    
+    <section id="comments">
+        
+    </section>
+
+
+    
+
+</main>
+
+
+<aside style="" id="sidebar" class="aside aside-fixture">
+    <div class="toc-sidebar">
+        <nav id="toc" class="article-toc">
+            <h3 class="toc-title">文章目录</h3>
+            <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80-%E6%A6%82%E8%BF%B0"><span class="toc-number">1.</span> <span class="toc-text">一 概述</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-%E5%AE%89%E8%A3%85%E5%90%AF%E5%8A%A8"><span class="toc-number">1.1.</span> <span class="toc-text">1. 安装启动</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C-%E8%99%9A%E6%8B%9F%E8%B7%AF%E7%94%B1%E5%86%97%E4%BD%99%E5%8D%8F%E8%AE%AE"><span class="toc-number">2.</span> <span class="toc-text">二 虚拟路由冗余协议</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-%E5%8D%95%E6%92%AD"><span class="toc-number">2.1.</span> <span class="toc-text">1. 单播</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89-%E5%AE%9E%E7%8E%B0"><span class="toc-number">3.</span> <span class="toc-text">三 实现</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-%E8%B0%83%E8%AF%95"><span class="toc-number">3.1.</span> <span class="toc-text">1. 调试</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E5%8F%91%E9%80%81%E9%80%9A%E5%91%8A"><span class="toc-number">3.2.</span> <span class="toc-text">2. 发送通告</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8F%82%E8%80%83%E6%96%87%E6%A1%A3"><span class="toc-number">4.</span> <span class="toc-text">参考文档</span></a></li></ol>
+        </nav>
+    </div>
+</aside>
+
+
+
+
+
+        </section>
+        <footer class="hidden lg:block fixed bottom-0 left-0 sm:w-1/12 lg:w-1/6 bg-gray-100 z-40">
+    
+    <div class="footer-social-links">
+        
+            <a target="_blank" rel="noopener" href="https://github.com/juzipeek">
+                <i class="iconfont icon-github"></i>
+            </a>
+        
+    </div>
+    
+    
+</footer>
+
+        <div id="mask" class="hidden mask fixed inset-0 bg-gray-900 opacity-75 z-40"></div>
+        <div id="search-view-container" class="hidden shadow-xl"></div>
+        
+<script src="/js/dom-event.min.js"></script>
+
+
+
+<script src="/js/local-search.min.js"></script>
+
+
+
+    <script src="//cdn.jsdelivr.net/npm/lightgallery.js@1.1.3/dist/js/lightgallery.min.js"></script>
+    
+<script src="/js/light-gallery.min.js"></script>
+
+
+
+
+
+
+    </body>
+</html>

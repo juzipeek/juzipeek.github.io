@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html  lang="zh-CN" >
+    <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, minimum-scale=1, initial-scale=1, maximum-scale=5, viewport-fit=cover">
+    <title>OpenResty Api - ngx.arg | 自留地</title>
+    <meta name="description" content="一 概述本文主要介绍 OpenResty 中各 Api 功能，加深学习印象。 二 ngx.argngx.arg 在 body filter 阶段用来读取、更新应答数据。其中 ngx.arg[1] 是待发送的 body，ngx.arg[2] 指示后续是否还有待发送数据。 ngx.arg 变量是 table 类型，只支持 __index（获取）和 __newindex（更新）两个元方法。__index">
+<meta property="og:type" content="article">
+<meta property="og:title" content="OpenResty Api - ngx.arg">
+<meta property="og:url" content="https://juzipeek.github.io/2019/07/08/openresty%20api%20-%20ngx.arg/index.html">
+<meta property="og:site_name" content="自留地">
+<meta property="og:description" content="一 概述本文主要介绍 OpenResty 中各 Api 功能，加深学习印象。 二 ngx.argngx.arg 在 body filter 阶段用来读取、更新应答数据。其中 ngx.arg[1] 是待发送的 body，ngx.arg[2] 指示后续是否还有待发送数据。 ngx.arg 变量是 table 类型，只支持 __index（获取）和 __newindex（更新）两个元方法。__index">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2019-07-07T16:00:00.000Z">
+<meta property="article:modified_time" content="2022-09-03T17:44:11.316Z">
+<meta property="article:author" content="zhou cheng jie">
+<meta property="article:tag" content="NGINX">
+<meta property="article:tag" content="C">
+<meta property="article:tag" content="Lua">
+<meta property="article:tag" content="OpenResty">
+<meta name="twitter:card" content="summary">
+
+    
+    <link rel="icon" href="/images/favicon.ico" type="image/x-icon">
+
+    
+<link rel="stylesheet" href="/css/common.min.css">
+
+
+
+    
+    
+    
+    
+        <link href="//cdn.jsdelivr.net/npm/lightgallery.js@1.1.3/dist/css/lightgallery.min.css" rel="stylesheet">
+    
+    
+    
+<link rel="stylesheet" href="/css/iconfont.min.css">
+
+    
+    <script>
+        (function(e,t,n,i,s,a,c){e[n]=e[n]||function(){(e[n].q=e[n].q||[]).push(arguments)}
+        ;a=t.createElement(i);c=t.getElementsByTagName(i)[0];a.async=true;a.src=s
+        ;c.parentNode.insertBefore(a,c)
+        })(window,document,"galite","script","https://cdn.jsdelivr.net/npm/ga-lite@2/dist/ga-lite.min.js");
+
+        galite('create', 'G-HFGFGEWD53', 'auto');
+        galite('send', 'pageview');
+    </script>
+    
+<meta name="generator" content="Hexo 5.4.2"></head>
+
+    <body>
+        <header class="header header-fixture">
+    <div class="profile-search-wrap flex sm:block">
+        
+        
+        <div class="profile sm:text-center md:px-1 lg:px-3 sm:pb-4 sm:pt-6">
+            <a id="avatar" role="link" href="https://github.com/juzipeek" class="inline-block lg:w-16 lg:h-16 w-8 h-8 m-2" target="_blank" rel="noopener" rel="noreferrer" >
+                <img src="/images/yellow.jpg" class="rounded-full" alt="avatar">
+            </a>
+            <h2 id="name" class="hidden lg:block">zhou cheng jie</h2>
+            <h3 id="title" class="hidden lg:block">coder</h3>
+            
+            <small id="location" class="hidden lg:block">
+                <i class="iconfont icon-map-icon"></i>
+                BeiJing, China
+            </small>
+            
+        </div>
+        
+        
+<div class="search flex-1 flex lg:inline-block sm:hidden lg:px-4 lg:mt-2 lg:mb-4 lg:w-full">
+    <form id="search-form" class="my-auto flex-1 lg:border lg:border-solid lg:border-gray-200">
+        <div class="input-group table bg-gray-100 lg:bg-white w-full">
+            <input id="search-input" type="text" placeholder="搜索" class="inline-block w-full bg-gray-100 lg:bg-white p-1">
+            <span class="table-cell">
+                <button name="search tigger button" disabled>
+                    <i class="iconfont icon-search m-2"></i>
+                </button>
+            </span>
+        </div>
+    </form>
+        
+<div id="content-json" data-placeholder="搜索" class="invisible hidden">/content.json</div>
+<script id="search-teamplate" type="text/html" data-path="/content.json">
+    <div>
+        <div class="search-header bg-gray-400">
+            <input id="actual-search-input" model="keyword" ref="input" class="inline-block w-full h-10 px-2 py-1" placeholder="搜索" type="text">
+        </div>
+        <div class="search-result bg-gray-200">
+            {{#each searchPosts}}
+            <a href="/{{ path }}" class="result-item block px-2 pb-3 mb-1 pt-1 hover:bg-indigo-100">
+                <i class="iconfont icon-file"></i>
+                <h1 class="result-title inline font-medium text-lg">{{ title }}</h1>
+                <p class="result-content text-gray-600 text-sm">{{{ text }}}</p>
+            </a>
+            {{/each}}
+        </div>
+    </div>
+</script>
+
+</div>
+
+
+        <button name="menu toogle button" id="menu-toggle-btn" class="block sm:hidden p-3" role="button" aria-expanded="false">
+            <i class="iconfont icon-hamburger"></i>
+        </button>
+    </div>
+    <nav id="menu-nav" class="hidden sm:flex flex-col">
+        
+        
+            <div class="menu-item menu-home" role="menuitem">
+                <a href="/.">
+                    <i class="iconfont icon-home" aria-hidden="true"></i>
+                    <span class="menu-title">首页</span>
+                </a>
+            </div>
+        
+        
+            <div class="menu-item menu-archives" role="menuitem">
+                <a href="/archives">
+                    <i class="iconfont icon-archive" aria-hidden="true"></i>
+                    <span class="menu-title">归档</span>
+                </a>
+            </div>
+        
+        
+            <div class="menu-item menu-categories" role="menuitem">
+                <a href="/categories">
+                    <i class="iconfont icon-folder" aria-hidden="true"></i>
+                    <span class="menu-title">分类</span>
+                </a>
+            </div>
+        
+        
+            <div class="menu-item menu-tags" role="menuitem">
+                <a href="/tags">
+                    <i class="iconfont icon-tag" aria-hidden="true"></i>
+                    <span class="menu-title">标签</span>
+                </a>
+            </div>
+        
+        
+            <div class="menu-item menu-about" role="menuitem">
+                <a href="/about">
+                    <i class="iconfont icon-cup" aria-hidden="true"></i>
+                    <span class="menu-title">关于</span>
+                </a>
+            </div>
+        
+        
+<div class="social-links flex sm:flex-col lg:hidden mt-5">
+    
+        <span class="social-item text-center">
+            <a target="_blank" rel="noopener" href="https://github.com/juzipeek">
+                <i class="iconfont social-icon icon-github"></i>
+                <span class="menu-title hidden lg:inline">menu.github</span>
+            </a>
+        </span>
+    
+</div>
+
+
+    </nav>
+</header>
+
+        <section class="main-section">
+            
+    <main class="flex-1 px-4 py-14 md:px-5 lg:px-8 lg:py-4 relative min-h-screen">
+    
+
+    <article class="content article article-archives article-type-list" itemscope="">
+        <header class="article-header">
+            
+    
+        <h1 class="article-title text-lg" itemprop="name">
+            OpenResty Api - ngx.arg
+        </h1>
+    
+
+
+
+            <p class="article-meta mb-3 text-xs">
+                <span class="article-date">
+    <i class="iconfont icon-calendar-check"></i>
+	<a href="/2019/07/08/openresty%20api%20-%20ngx.arg/" class="article-date">
+	  <time datetime="2019-07-07T16:00:00.000Z" itemprop="datePublished">7月 8</time>
+	</a>
+</span>
+
+                
+    <span class="article-category">
+    <i class="iconfont icon-folder"></i>
+    <a class="article-category-link" href="/categories/NGINX/">NGINX</a>
+  </span>
+
+
+                
+    <span class="article-tags">
+    <i class="iconfont icon-tag"></i>
+    <a class="article-tag-none-link" href="/tags/C/" rel="tag">C</a>, <a class="article-tag-none-link" href="/tags/Lua/" rel="tag">Lua</a>, <a class="article-tag-none-link" href="/tags/NGINX/" rel="tag">NGINX</a>, <a class="article-tag-none-link" href="/tags/OpenResty/" rel="tag">OpenResty</a>
+  </span>
+
+
+                <span class="_partial/post-comment"><i class="icon icon-comment"></i>
+                    <a href="/2019/07/08/openresty%20api%20-%20ngx.arg/#comments" class="article-comment-link">
+                        评论
+                    </a>
+                </span>
+                
+    
+        <span class="post-wordcount" itemprop="wordCount">字数统计: 1.5k(字)</span>
+    
+    
+        <span class="post-readcount" itemprop="timeRequired">阅读时长: 7(分)</span>
+    
+
+
+            </p>
+        </header>
+        <div class="marked-body article-body">
+            <h2 id="一-概述"><a href="#一-概述" class="headerlink" title="一 概述"></a>一 概述</h2><p>本文主要介绍 <code>OpenResty</code> 中各 <code>Api</code> 功能，加深学习印象。</p>
+<h2 id="二-ngx-arg"><a href="#二-ngx-arg" class="headerlink" title="二 ngx.arg"></a>二 <code>ngx.arg</code></h2><p><code>ngx.arg</code> 在 <code>body filter</code> 阶段用来读取、更新应答数据。其中 <code>ngx.arg[1]</code> 是待发送的 <code>body</code>，<code>ngx.arg[2]</code> 指示后续是否还有待发送数据。</p>
+<p><code>ngx.arg</code> 变量是 <code>table</code> 类型，只支持 <code>__index</code>（获取）和 <code>__newindex</code>（更新）两个元方法。<code>__index</code> 方法由 <code>ngx_http_lua_body_filter_param_get</code> 函数最终实现，<code>__newindex</code> 方法由 <code>ngx_http_lua_body_filter_param_set</code> 函数最终实现。</p>
+<h3 id="1-获取函数"><a href="#1-获取函数" class="headerlink" title="1. 获取函数"></a>1. 获取函数</h3><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">int</span></span><br><span class="line"><span class="title function_">ngx_http_lua_body_filter_param_get</span><span class="params">(lua_State *L)</span></span><br><span class="line">&#123;</span><br><span class="line">    u_char              *data, *p;</span><br><span class="line">    <span class="type">size_t</span>               size;</span><br><span class="line">    <span class="type">ngx_chain_t</span>         *cl;</span><br><span class="line">    <span class="type">ngx_buf_t</span>           *b;</span><br><span class="line">    <span class="type">int</span>                  idx;</span><br><span class="line">    <span class="type">ngx_chain_t</span>         *in;</span><br><span class="line"></span><br><span class="line">    idx = luaL_checkint(L, <span class="number">2</span>);</span><br><span class="line"></span><br><span class="line">    dd(<span class="string">&quot;index: %d&quot;</span>, idx);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (idx != <span class="number">1</span> &amp;&amp; idx != <span class="number">2</span>) &#123;</span><br><span class="line">        lua_pushnil(L);</span><br><span class="line">        <span class="keyword">return</span> <span class="number">1</span>;</span><br><span class="line">    &#125;</span><br><span class="line">		<span class="comment">// ngx_http_lua_chain_key：</span></span><br><span class="line">    <span class="comment">// 从全局获得值并压入栈</span></span><br><span class="line">    lua_getglobal(L, ngx_http_lua_chain_key);</span><br><span class="line">    <span class="comment">// 将栈顶元素出栈转换为 userdata（ngx_chain_t*）类型，</span></span><br><span class="line">    <span class="comment">// 此内容为 body 的 ngx_chain_t</span></span><br><span class="line">    in = lua_touserdata(L, <span class="number">-1</span>);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 如果调用 ngx.arg[2],使用来判断是否发送结束</span></span><br><span class="line">    <span class="keyword">if</span> (idx == <span class="number">2</span>) &#123;</span><br><span class="line">        <span class="comment">/* asking for the eof argument */</span></span><br><span class="line"></span><br><span class="line">        <span class="keyword">for</span> (cl = in; cl; cl = cl-&gt;next) &#123;</span><br><span class="line">            <span class="comment">// 最后的 buf，说明发送完毕</span></span><br><span class="line">            <span class="keyword">if</span> (cl-&gt;buf-&gt;last_buf || cl-&gt;buf-&gt;last_in_chain) &#123;</span><br><span class="line">                lua_pushboolean(L, <span class="number">1</span>);</span><br><span class="line">                <span class="keyword">return</span> <span class="number">1</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        lua_pushboolean(L, <span class="number">0</span>);</span><br><span class="line">        <span class="keyword">return</span> <span class="number">1</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* idx == 1 */</span></span><br><span class="line">		<span class="comment">// ngx.arg[1] 用来取应答包体（ngx_chain_t）中内容</span></span><br><span class="line">    size = <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (in == <span class="literal">NULL</span>) &#123;</span><br><span class="line">        <span class="comment">/* being a cleared chain on the Lua land */</span></span><br><span class="line">        lua_pushliteral(L, <span class="string">&quot;&quot;</span>);</span><br><span class="line">        <span class="keyword">return</span> <span class="number">1</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 应答内容在一个 buf 中，直接压入栈顶，返回</span></span><br><span class="line">    <span class="keyword">if</span> (in-&gt;next == <span class="literal">NULL</span>) &#123;</span><br><span class="line"></span><br><span class="line">        dd(<span class="string">&quot;seen only single buffer&quot;</span>);</span><br><span class="line"></span><br><span class="line">        b = in-&gt;buf;</span><br><span class="line">        lua_pushlstring(L, (<span class="type">char</span> *) b-&gt;pos, b-&gt;last - b-&gt;pos);</span><br><span class="line">        <span class="keyword">return</span> <span class="number">1</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    dd(<span class="string">&quot;seen multiple buffers&quot;</span>);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 计算应答内容的大小</span></span><br><span class="line">    <span class="keyword">for</span> (cl = in; cl; cl = cl-&gt;next) &#123;</span><br><span class="line">        b = cl-&gt;buf;</span><br><span class="line"></span><br><span class="line">        size += b-&gt;last - b-&gt;pos;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (b-&gt;last_buf || b-&gt;last_in_chain) &#123;</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">  	<span class="comment">// 创建 size 大小缓冲区（userdata 类型），并压入栈顶</span></span><br><span class="line">    data = (u_char *) lua_newuserdata(L, size);</span><br><span class="line"></span><br><span class="line">  	<span class="comment">// 将应答内容拷贝到缓冲区</span></span><br><span class="line">    <span class="keyword">for</span> (p = data, cl = in; cl; cl = cl-&gt;next) &#123;</span><br><span class="line">        b = cl-&gt;buf;</span><br><span class="line">        p = ngx_copy(p, b-&gt;pos, b-&gt;last - b-&gt;pos);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (b-&gt;last_buf || b-&gt;last_in_chain) &#123;</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 将栈上由 data 指向的 size 长度字符压入栈顶</span></span><br><span class="line">    <span class="comment">// Lua 会生成给定字符串的内部副本，在函数返回后可以删除 data 指向的内容</span></span><br><span class="line">    lua_pushlstring(L, (<span class="type">char</span> *) data, size);</span><br><span class="line">    <span class="keyword">return</span> <span class="number">1</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="2-更新函数"><a href="#2-更新函数" class="headerlink" title="2. 更新函数"></a>2. 更新函数</h3><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br><span class="line">173</span><br><span class="line">174</span><br><span class="line">175</span><br><span class="line">176</span><br><span class="line">177</span><br><span class="line">178</span><br><span class="line">179</span><br><span class="line">180</span><br><span class="line">181</span><br><span class="line">182</span><br><span class="line">183</span><br><span class="line">184</span><br><span class="line">185</span><br><span class="line">186</span><br><span class="line">187</span><br><span class="line">188</span><br><span class="line">189</span><br><span class="line">190</span><br><span class="line">191</span><br><span class="line">192</span><br><span class="line">193</span><br><span class="line">194</span><br><span class="line">195</span><br><span class="line">196</span><br><span class="line">197</span><br><span class="line">198</span><br><span class="line">199</span><br><span class="line">200</span><br><span class="line">201</span><br><span class="line">202</span><br><span class="line">203</span><br><span class="line">204</span><br><span class="line">205</span><br><span class="line">206</span><br><span class="line">207</span><br><span class="line">208</span><br><span class="line">209</span><br><span class="line">210</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">int</span></span><br><span class="line"><span class="title function_">ngx_http_lua_body_filter_param_set</span><span class="params">(lua_State *L, <span class="type">ngx_http_request_t</span> *r,</span></span><br><span class="line"><span class="params">    <span class="type">ngx_http_lua_ctx_t</span> *ctx)</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="type">int</span>                      type;</span><br><span class="line">    <span class="type">int</span>                      idx;</span><br><span class="line">    <span class="type">int</span>                      found;</span><br><span class="line">    u_char                  *data;</span><br><span class="line">    <span class="type">size_t</span>                   size;</span><br><span class="line">    <span class="type">unsigned</span>                 last;</span><br><span class="line">    <span class="type">unsigned</span>                 flush = <span class="number">0</span>;</span><br><span class="line">    <span class="type">ngx_buf_t</span>               *b;</span><br><span class="line">    <span class="type">ngx_chain_t</span>             *cl;</span><br><span class="line">    <span class="type">ngx_chain_t</span>             *in;</span><br><span class="line"></span><br><span class="line">  	<span class="comment">// 检查第二个参数是否是 int，如果是 int 则返回值</span></span><br><span class="line">    <span class="comment">// 其实还是操作的栈，判断栈中从栈底开始第二个元素是否是 int 类型并返回</span></span><br><span class="line">    idx = luaL_checkint(L, <span class="number">2</span>);</span><br><span class="line"></span><br><span class="line">    dd(<span class="string">&quot;index: %d&quot;</span>, idx);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (idx != <span class="number">1</span> &amp;&amp; idx != <span class="number">2</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span> luaL_error(L, <span class="string">&quot;bad index: %d&quot;</span>, idx);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 更新发送结束标识</span></span><br><span class="line">    <span class="keyword">if</span> (idx == <span class="number">2</span>) &#123;</span><br><span class="line">        <span class="comment">/* overwriting the eof flag */</span></span><br><span class="line">        last = lua_toboolean(L, <span class="number">3</span>);</span><br><span class="line">				<span class="comment">// 获得应答 body 的 ngx_chain_t 数据</span></span><br><span class="line">        lua_getglobal(L, ngx_http_lua_chain_key);</span><br><span class="line">        in = lua_touserdata(L, <span class="number">-1</span>);</span><br><span class="line">        <span class="comment">// 将从栈顶开始向下的两个元素 pop 出栈(并未使用)</span></span><br><span class="line">        lua_pop(L, <span class="number">1</span>);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (last) &#123;</span><br><span class="line">            ctx-&gt;seen_last_in_filter = <span class="number">1</span>;</span><br><span class="line"></span><br><span class="line">            <span class="comment">/* the &quot;in&quot; chain cannot be NULL and we set the &quot;last_buf&quot; or</span></span><br><span class="line"><span class="comment">             * &quot;last_in_chain&quot; flag in the last buf of &quot;in&quot; */</span></span><br><span class="line">						<span class="comment">// 设置应答 body 的 ngx_chain_t 中的标识为结束</span></span><br><span class="line">            <span class="keyword">for</span> (cl = in; cl; cl = cl-&gt;next) &#123;</span><br><span class="line">                <span class="keyword">if</span> (cl-&gt;next == <span class="literal">NULL</span>) &#123;</span><br><span class="line">                    <span class="keyword">if</span> (r == r-&gt;main) &#123;</span><br><span class="line">                        cl-&gt;buf-&gt;last_buf = <span class="number">1</span>;</span><br><span class="line"></span><br><span class="line">                    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                        cl-&gt;buf-&gt;last_in_chain = <span class="number">1</span>;</span><br><span class="line">                    &#125;</span><br><span class="line"></span><br><span class="line">                    <span class="keyword">break</span>;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="comment">/* last == 0 */</span></span><br><span class="line">						<span class="comment">// 设置应答 body 的 ngx_chain_t 中的标识为未结束</span></span><br><span class="line">            found = <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">            <span class="keyword">for</span> (cl = in; cl; cl = cl-&gt;next) &#123;</span><br><span class="line">                b = cl-&gt;buf;</span><br><span class="line"></span><br><span class="line">                <span class="keyword">if</span> (b-&gt;last_buf) &#123;</span><br><span class="line">                    b-&gt;last_buf = <span class="number">0</span>;</span><br><span class="line">                    found = <span class="number">1</span>;</span><br><span class="line">                &#125;</span><br><span class="line"></span><br><span class="line">                <span class="keyword">if</span> (b-&gt;last_in_chain) &#123;</span><br><span class="line">                    b-&gt;last_in_chain = <span class="number">0</span>;</span><br><span class="line">                    found = <span class="number">1</span>;</span><br><span class="line">                &#125;</span><br><span class="line"></span><br><span class="line">                <span class="keyword">if</span> (found &amp;&amp; b-&gt;last == b-&gt;pos &amp;&amp; !ngx_buf_in_memory(b)) &#123;</span><br><span class="line">                    <span class="comment">/* make it a special sync buf to make</span></span><br><span class="line"><span class="comment">                     * ngx_http_write_filter_module happy. */</span></span><br><span class="line">                    b-&gt;sync = <span class="number">1</span>;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            ctx-&gt;seen_last_in_filter = <span class="number">0</span>;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* idx == 1, overwriting the chunk data */</span></span><br><span class="line">		<span class="comment">// 更新发送内容</span></span><br><span class="line">    <span class="comment">// 获得从栈底(1)开始，第三个索引处的数据类型</span></span><br><span class="line">    type = lua_type(L, <span class="number">3</span>);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">switch</span> (type) &#123;</span><br><span class="line">    <span class="keyword">case</span> LUA_TSTRING:</span><br><span class="line">    <span class="keyword">case</span> LUA_TNUMBER:</span><br><span class="line">        <span class="comment">// 直接转换为字符串，方便更新发送缓冲区</span></span><br><span class="line">        data = (u_char *) lua_tolstring(L, <span class="number">3</span>, &amp;size);</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">case</span> LUA_TNIL:</span><br><span class="line">        <span class="comment">/* discard the buffers */</span></span><br><span class="line">				<span class="comment">// 从 _G 中获取 __ngx_cl 到栈顶</span></span><br><span class="line">        lua_getglobal(L, ngx_http_lua_chain_key); <span class="comment">/* key val */</span></span><br><span class="line">        in = lua_touserdata(L, <span class="number">-1</span>);</span><br><span class="line">        lua_pop(L, <span class="number">1</span>);</span><br><span class="line"></span><br><span class="line">        last = <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">for</span> (cl = in; cl; cl = cl-&gt;next) &#123;</span><br><span class="line">            b = cl-&gt;buf;</span><br><span class="line"></span><br><span class="line">            <span class="keyword">if</span> (b-&gt;flush) &#123;</span><br><span class="line">                flush = <span class="number">1</span>;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="keyword">if</span> (b-&gt;last_in_chain || b-&gt;last_buf) &#123;</span><br><span class="line">                last = <span class="number">1</span>;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            dd(<span class="string">&quot;mark the buf as consumed: %d&quot;</span>, (<span class="type">int</span>) ngx_buf_size(b));</span><br><span class="line">            b-&gt;pos = b-&gt;last;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="comment">/* cl == NULL */</span></span><br><span class="line"></span><br><span class="line">        <span class="keyword">goto</span> done;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">case</span> LUA_TTABLE:</span><br><span class="line">        size = ngx_http_lua_calc_strlen_in_table(L, <span class="number">3</span> <span class="comment">/* index */</span>, <span class="number">3</span> <span class="comment">/* arg */</span>,</span><br><span class="line">                                                 <span class="number">1</span> <span class="comment">/* strict */</span>);</span><br><span class="line">        data = <span class="literal">NULL</span>;</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">default</span>:</span><br><span class="line">        <span class="keyword">return</span> luaL_error(L, <span class="string">&quot;bad chunk data type: %s&quot;</span>,</span><br><span class="line">                          lua_typename(L, type));</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 从 _G 中获取 __ngx_cl 内容到栈顶</span></span><br><span class="line">    lua_getglobal(L, ngx_http_lua_chain_key);</span><br><span class="line">    in = lua_touserdata(L, <span class="number">-1</span>);</span><br><span class="line">    lua_pop(L, <span class="number">1</span>); <span class="comment">// 清空除栈底两个元素外的其他元素</span></span><br><span class="line"></span><br><span class="line">    last = <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> (cl = in; cl; cl = cl-&gt;next) &#123;</span><br><span class="line">        b = cl-&gt;buf;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (b-&gt;flush) &#123;</span><br><span class="line">            flush = <span class="number">1</span>;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (b-&gt;last_buf || b-&gt;last_in_chain) &#123;</span><br><span class="line">            last = <span class="number">1</span>;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        dd(<span class="string">&quot;mark the buf as consumed: %d&quot;</span>, (<span class="type">int</span>) ngx_buf_size(cl-&gt;buf));</span><br><span class="line">        cl-&gt;buf-&gt;pos = cl-&gt;buf-&gt;last;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* cl == NULL */</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (size == <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="keyword">goto</span> done;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    cl = ngx_http_lua_chain_get_free_buf(r-&gt;connection-&gt;<span class="built_in">log</span>, r-&gt;pool,</span><br><span class="line">                                         &amp;ctx-&gt;free_bufs, size);</span><br><span class="line">    <span class="keyword">if</span> (cl == <span class="literal">NULL</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span> luaL_error(L, <span class="string">&quot;no memory&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 拷贝应答内容到发送缓冲区</span></span><br><span class="line">    <span class="keyword">if</span> (type == LUA_TTABLE) &#123;</span><br><span class="line">        cl-&gt;buf-&gt;last = ngx_http_lua_copy_str_in_table(L, <span class="number">3</span>, cl-&gt;buf-&gt;last);</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        cl-&gt;buf-&gt;last = ngx_copy(cl-&gt;buf-&gt;pos, data, size);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">done:</span><br><span class="line"><span class="comment">// 更新 last_buf 标记</span></span><br><span class="line">    <span class="keyword">if</span> (last || flush) &#123;</span><br><span class="line">        <span class="keyword">if</span> (cl == <span class="literal">NULL</span>) &#123;</span><br><span class="line">            cl = ngx_http_lua_chain_get_free_buf(r-&gt;connection-&gt;<span class="built_in">log</span>,</span><br><span class="line">                                                 r-&gt;pool,</span><br><span class="line">                                                 &amp;ctx-&gt;free_bufs, <span class="number">0</span>);</span><br><span class="line">            <span class="keyword">if</span> (cl == <span class="literal">NULL</span>) &#123;</span><br><span class="line">                <span class="keyword">return</span> luaL_error(L, <span class="string">&quot;no memory&quot;</span>);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (last) &#123;</span><br><span class="line">            ctx-&gt;seen_last_in_filter = <span class="number">1</span>;</span><br><span class="line"></span><br><span class="line">            <span class="keyword">if</span> (r == r-&gt;main) &#123;</span><br><span class="line">                cl-&gt;buf-&gt;last_buf = <span class="number">1</span>;</span><br><span class="line"></span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                cl-&gt;buf-&gt;last_in_chain = <span class="number">1</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (flush) &#123;</span><br><span class="line">            cl-&gt;buf-&gt;flush = <span class="number">1</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 更新 _G 中 __ngx_cl 值为最新值</span></span><br><span class="line">    lua_pushlightuserdata(L, cl);</span><br><span class="line">    lua_setglobal(L, ngx_http_lua_chain_key);</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="三-Lua-C-API"><a href="#三-Lua-C-API" class="headerlink" title="三 Lua C API"></a>三 Lua C API</h2><h3 id="1-栈结构"><a href="#1-栈结构" class="headerlink" title="1. 栈结构"></a>1. 栈结构</h3><p>在 <code>C</code> 与 <code>Lua</code> 之间传递数据是通过栈来实现，栈中的内容 <code>TValue</code> 类型（同时包含类型与值信息），在 <code>C</code>、<code>Lua</code> 间可以识别转换。栈顶可以用 -1 索引，栈底可以用 1 索引</p>
+<p>调用 <code>ngx.arg[2] = 1</code> 时栈结构：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">---------------------------------------</span><br><span class="line">| 正数索引 |  数据   | 负数索引 | 栈中位置 |</span><br><span class="line">---------------------------------------</span><br><span class="line">|    2    |   2    |   -1    |  栈顶   |</span><br><span class="line">|    1    |  _G    |   -2    |  栈底   |</span><br></pre></td></tr></table></figure>
+
+<p>栈中 <code>_G</code> 是在 <code>body filter</code> 指令处理函数（<code>ngx_http_lua_body_filter_inline</code> 或 <code>ngx_http_lua_body_filter_file</code>）中设置的栈底环境变量（<code>_G</code> 全局 <code>table</code>）。</p>
+<h3 id="2-函数说明"><a href="#2-函数说明" class="headerlink" title="2. 函数说明"></a>2. 函数说明</h3><p><code>lua_isnumber</code>、<code>lua_isstring</code> 系列函数并不会判断参数类型，他们会进行类型转换，如果转换成功返回其值。这样的话，对于 <code>string</code> 类型可以调用 <code>lua_isnumber</code> 函数。</p>
+<p><code>luaL_getn</code> </p>
+<h2 id="四-参考资料"><a href="#四-参考资料" class="headerlink" title="四 参考资料"></a>四 参考资料</h2><ul>
+<li><a target="_blank" rel="noopener" href="https://www.lua.org/pil/28.1.html">lua_newuserdata</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.lua.org/pil/24.2.1.html">lua_pushlstring</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.lua.org/pil/24.2.3.html">lua_pop</a></li>
+</ul>
+
+        </div>
+        
+
+    </article>
+    
+    <section id="comments">
+        
+    </section>
+
+
+    
+
+</main>
+
+
+<aside style="" id="sidebar" class="aside aside-fixture">
+    <div class="toc-sidebar">
+        <nav id="toc" class="article-toc">
+            <h3 class="toc-title">文章目录</h3>
+            <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80-%E6%A6%82%E8%BF%B0"><span class="toc-number">1.</span> <span class="toc-text">一 概述</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C-ngx-arg"><span class="toc-number">2.</span> <span class="toc-text">二 ngx.arg</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-%E8%8E%B7%E5%8F%96%E5%87%BD%E6%95%B0"><span class="toc-number">2.1.</span> <span class="toc-text">1. 获取函数</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E6%9B%B4%E6%96%B0%E5%87%BD%E6%95%B0"><span class="toc-number">2.2.</span> <span class="toc-text">2. 更新函数</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89-Lua-C-API"><span class="toc-number">3.</span> <span class="toc-text">三 Lua C API</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-%E6%A0%88%E7%BB%93%E6%9E%84"><span class="toc-number">3.1.</span> <span class="toc-text">1. 栈结构</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E5%87%BD%E6%95%B0%E8%AF%B4%E6%98%8E"><span class="toc-number">3.2.</span> <span class="toc-text">2. 函数说明</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9B%9B-%E5%8F%82%E8%80%83%E8%B5%84%E6%96%99"><span class="toc-number">4.</span> <span class="toc-text">四 参考资料</span></a></li></ol>
+        </nav>
+    </div>
+</aside>
+
+
+
+
+
+        </section>
+        <footer class="hidden lg:block fixed bottom-0 left-0 sm:w-1/12 lg:w-1/6 bg-gray-100 z-40">
+    
+    <div class="footer-social-links">
+        
+            <a target="_blank" rel="noopener" href="https://github.com/juzipeek">
+                <i class="iconfont icon-github"></i>
+            </a>
+        
+    </div>
+    
+    
+</footer>
+
+        <div id="mask" class="hidden mask fixed inset-0 bg-gray-900 opacity-75 z-40"></div>
+        <div id="search-view-container" class="hidden shadow-xl"></div>
+        
+<script src="/js/dom-event.min.js"></script>
+
+
+
+<script src="/js/local-search.min.js"></script>
+
+
+
+    <script src="//cdn.jsdelivr.net/npm/lightgallery.js@1.1.3/dist/js/lightgallery.min.js"></script>
+    
+<script src="/js/light-gallery.min.js"></script>
+
+
+
+
+
+
+    </body>
+</html>

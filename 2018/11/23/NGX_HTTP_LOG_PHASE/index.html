@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html  lang="zh-CN" >
+    <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, minimum-scale=1, initial-scale=1, maximum-scale=5, viewport-fit=cover">
+    <title>NGX_HTTP_LOG_PHASE 阶段介绍 | 自留地</title>
+    <meta name="description" content="phase_engine初始化NGINX 中每个阶段的处理函数是在 ngx_http_core_run_phases 函数中调用 123456789101112131415161718192021voidngx_http_core_run_phases(ngx_http_request_t *r)&amp;#123;    ngx_int_t                   rc;    ngx_ht">
+<meta property="og:type" content="article">
+<meta property="og:title" content="NGX_HTTP_LOG_PHASE 阶段介绍">
+<meta property="og:url" content="https://juzipeek.github.io/2018/11/23/NGX_HTTP_LOG_PHASE/index.html">
+<meta property="og:site_name" content="自留地">
+<meta property="og:description" content="phase_engine初始化NGINX 中每个阶段的处理函数是在 ngx_http_core_run_phases 函数中调用 123456789101112131415161718192021voidngx_http_core_run_phases(ngx_http_request_t *r)&amp;#123;    ngx_int_t                   rc;    ngx_ht">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2018-11-22T16:00:00.000Z">
+<meta property="article:modified_time" content="2022-09-03T17:44:11.312Z">
+<meta property="article:author" content="zhou cheng jie">
+<meta property="article:tag" content="NGINX">
+<meta property="article:tag" content="C">
+<meta name="twitter:card" content="summary">
+
+    
+    <link rel="icon" href="/images/favicon.ico" type="image/x-icon">
+
+    
+<link rel="stylesheet" href="/css/common.min.css">
+
+
+
+    
+    
+    
+    
+        <link href="//cdn.jsdelivr.net/npm/lightgallery.js@1.1.3/dist/css/lightgallery.min.css" rel="stylesheet">
+    
+    
+    
+<link rel="stylesheet" href="/css/iconfont.min.css">
+
+    
+    <script>
+        (function(e,t,n,i,s,a,c){e[n]=e[n]||function(){(e[n].q=e[n].q||[]).push(arguments)}
+        ;a=t.createElement(i);c=t.getElementsByTagName(i)[0];a.async=true;a.src=s
+        ;c.parentNode.insertBefore(a,c)
+        })(window,document,"galite","script","https://cdn.jsdelivr.net/npm/ga-lite@2/dist/ga-lite.min.js");
+
+        galite('create', 'G-HFGFGEWD53', 'auto');
+        galite('send', 'pageview');
+    </script>
+    
+<meta name="generator" content="Hexo 5.4.2"></head>
+
+    <body>
+        <header class="header header-fixture">
+    <div class="profile-search-wrap flex sm:block">
+        
+        
+        <div class="profile sm:text-center md:px-1 lg:px-3 sm:pb-4 sm:pt-6">
+            <a id="avatar" role="link" href="https://github.com/juzipeek" class="inline-block lg:w-16 lg:h-16 w-8 h-8 m-2" target="_blank" rel="noopener" rel="noreferrer" >
+                <img src="/images/yellow.jpg" class="rounded-full" alt="avatar">
+            </a>
+            <h2 id="name" class="hidden lg:block">zhou cheng jie</h2>
+            <h3 id="title" class="hidden lg:block">coder</h3>
+            
+            <small id="location" class="hidden lg:block">
+                <i class="iconfont icon-map-icon"></i>
+                BeiJing, China
+            </small>
+            
+        </div>
+        
+        
+<div class="search flex-1 flex lg:inline-block sm:hidden lg:px-4 lg:mt-2 lg:mb-4 lg:w-full">
+    <form id="search-form" class="my-auto flex-1 lg:border lg:border-solid lg:border-gray-200">
+        <div class="input-group table bg-gray-100 lg:bg-white w-full">
+            <input id="search-input" type="text" placeholder="搜索" class="inline-block w-full bg-gray-100 lg:bg-white p-1">
+            <span class="table-cell">
+                <button name="search tigger button" disabled>
+                    <i class="iconfont icon-search m-2"></i>
+                </button>
+            </span>
+        </div>
+    </form>
+        
+<div id="content-json" data-placeholder="搜索" class="invisible hidden">/content.json</div>
+<script id="search-teamplate" type="text/html" data-path="/content.json">
+    <div>
+        <div class="search-header bg-gray-400">
+            <input id="actual-search-input" model="keyword" ref="input" class="inline-block w-full h-10 px-2 py-1" placeholder="搜索" type="text">
+        </div>
+        <div class="search-result bg-gray-200">
+            {{#each searchPosts}}
+            <a href="/{{ path }}" class="result-item block px-2 pb-3 mb-1 pt-1 hover:bg-indigo-100">
+                <i class="iconfont icon-file"></i>
+                <h1 class="result-title inline font-medium text-lg">{{ title }}</h1>
+                <p class="result-content text-gray-600 text-sm">{{{ text }}}</p>
+            </a>
+            {{/each}}
+        </div>
+    </div>
+</script>
+
+</div>
+
+
+        <button name="menu toogle button" id="menu-toggle-btn" class="block sm:hidden p-3" role="button" aria-expanded="false">
+            <i class="iconfont icon-hamburger"></i>
+        </button>
+    </div>
+    <nav id="menu-nav" class="hidden sm:flex flex-col">
+        
+        
+            <div class="menu-item menu-home" role="menuitem">
+                <a href="/.">
+                    <i class="iconfont icon-home" aria-hidden="true"></i>
+                    <span class="menu-title">首页</span>
+                </a>
+            </div>
+        
+        
+            <div class="menu-item menu-archives" role="menuitem">
+                <a href="/archives">
+                    <i class="iconfont icon-archive" aria-hidden="true"></i>
+                    <span class="menu-title">归档</span>
+                </a>
+            </div>
+        
+        
+            <div class="menu-item menu-categories" role="menuitem">
+                <a href="/categories">
+                    <i class="iconfont icon-folder" aria-hidden="true"></i>
+                    <span class="menu-title">分类</span>
+                </a>
+            </div>
+        
+        
+            <div class="menu-item menu-tags" role="menuitem">
+                <a href="/tags">
+                    <i class="iconfont icon-tag" aria-hidden="true"></i>
+                    <span class="menu-title">标签</span>
+                </a>
+            </div>
+        
+        
+            <div class="menu-item menu-about" role="menuitem">
+                <a href="/about">
+                    <i class="iconfont icon-cup" aria-hidden="true"></i>
+                    <span class="menu-title">关于</span>
+                </a>
+            </div>
+        
+        
+<div class="social-links flex sm:flex-col lg:hidden mt-5">
+    
+        <span class="social-item text-center">
+            <a target="_blank" rel="noopener" href="https://github.com/juzipeek">
+                <i class="iconfont social-icon icon-github"></i>
+                <span class="menu-title hidden lg:inline">menu.github</span>
+            </a>
+        </span>
+    
+</div>
+
+
+    </nav>
+</header>
+
+        <section class="main-section">
+            
+    <main class="flex-1 px-4 py-14 md:px-5 lg:px-8 lg:py-4 relative min-h-screen">
+    
+
+    <article class="content article article-archives article-type-list" itemscope="">
+        <header class="article-header">
+            
+    
+        <h1 class="article-title text-lg" itemprop="name">
+            NGX_HTTP_LOG_PHASE 阶段介绍
+        </h1>
+    
+
+
+
+            <p class="article-meta mb-3 text-xs">
+                <span class="article-date">
+    <i class="iconfont icon-calendar-check"></i>
+	<a href="/2018/11/23/NGX_HTTP_LOG_PHASE/" class="article-date">
+	  <time datetime="2018-11-22T16:00:00.000Z" itemprop="datePublished">11月 23</time>
+	</a>
+</span>
+
+                
+    <span class="article-category">
+    <i class="iconfont icon-folder"></i>
+    <a class="article-category-link" href="/categories/NGINX/">NGINX</a>
+  </span>
+
+
+                
+    <span class="article-tags">
+    <i class="iconfont icon-tag"></i>
+    <a class="article-tag-none-link" href="/tags/C/" rel="tag">C</a>, <a class="article-tag-none-link" href="/tags/NGINX/" rel="tag">NGINX</a>
+  </span>
+
+
+                <span class="_partial/post-comment"><i class="icon icon-comment"></i>
+                    <a href="/2018/11/23/NGX_HTTP_LOG_PHASE/#comments" class="article-comment-link">
+                        评论
+                    </a>
+                </span>
+                
+    
+        <span class="post-wordcount" itemprop="wordCount">字数统计: 1.2k(字)</span>
+    
+    
+        <span class="post-readcount" itemprop="timeRequired">阅读时长: 5(分)</span>
+    
+
+
+            </p>
+        </header>
+        <div class="marked-body article-body">
+            <h2 id="phase-engine初始化"><a href="#phase-engine初始化" class="headerlink" title="phase_engine初始化"></a>phase_engine初始化</h2><p>NGINX 中每个阶段的处理函数是在 <code>ngx_http_core_run_phases</code> 函数中调用</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">void</span></span><br><span class="line"><span class="title function_">ngx_http_core_run_phases</span><span class="params">(<span class="type">ngx_http_request_t</span> *r)</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="type">ngx_int_t</span>                   rc;</span><br><span class="line">    <span class="type">ngx_http_phase_handler_t</span>   *ph;</span><br><span class="line">    <span class="type">ngx_http_core_main_conf_t</span>  *cmcf;</span><br><span class="line"></span><br><span class="line">    cmcf = ngx_http_get_module_main_conf(r, ngx_http_core_module);</span><br><span class="line"></span><br><span class="line">    ph = cmcf-&gt;phase_engine.handlers;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">while</span> (ph[r-&gt;phase_handler].checker) &#123;</span><br><span class="line"></span><br><span class="line">        rc = ph[r-&gt;phase_handler].checker(r, &amp;ph[r-&gt;phase_handler]);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (rc == NGX_OK) &#123;</span><br><span class="line">            <span class="keyword">return</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>其中 <code>phase_engine</code> 初始化如下：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">static</span> <span class="type">ngx_int_t</span></span><br><span class="line"><span class="title function_">ngx_http_init_phase_handlers</span><span class="params">(<span class="type">ngx_conf_t</span> *cf, <span class="type">ngx_http_core_main_conf_t</span> *cmcf)</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="type">ngx_int_t</span>                   j;</span><br><span class="line">    <span class="type">ngx_uint_t</span>                  i, n;</span><br><span class="line">    <span class="type">ngx_uint_t</span>                  find_config_index, use_rewrite, use_access;</span><br><span class="line">    ngx_http_handler_pt        *h;</span><br><span class="line">    <span class="type">ngx_http_phase_handler_t</span>   *ph;</span><br><span class="line">    ngx_http_phase_handler_pt   checker;</span><br><span class="line"></span><br><span class="line">    cmcf-&gt;phase_engine.server_rewrite_index = (<span class="type">ngx_uint_t</span>) <span class="number">-1</span>;</span><br><span class="line">    cmcf-&gt;phase_engine.location_rewrite_index = (<span class="type">ngx_uint_t</span>) <span class="number">-1</span>;</span><br><span class="line">    find_config_index = <span class="number">0</span>;</span><br><span class="line">    use_rewrite = cmcf-&gt;phases[NGX_HTTP_REWRITE_PHASE].handlers.nelts ? <span class="number">1</span> : <span class="number">0</span>;</span><br><span class="line">    use_access = cmcf-&gt;phases[NGX_HTTP_ACCESS_PHASE].handlers.nelts ? <span class="number">1</span> : <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">    n = <span class="number">1</span>                  <span class="comment">/* find config phase */</span></span><br><span class="line">        + use_rewrite      <span class="comment">/* post rewrite phase */</span></span><br><span class="line">        + use_access       <span class="comment">/* post access phase */</span></span><br><span class="line">        + cmcf-&gt;try_files;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> (i = <span class="number">0</span>; i &lt; NGX_HTTP_LOG_PHASE; i++) &#123;</span><br><span class="line">        n += cmcf-&gt;phases[i].handlers.nelts;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    ph = ngx_pcalloc(cf-&gt;pool, n * <span class="keyword">sizeof</span>(<span class="type">ngx_http_phase_handler_t</span>) + <span class="keyword">sizeof</span>(<span class="type">void</span> *));</span><br><span class="line">    <span class="keyword">if</span> (ph == <span class="literal">NULL</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span> NGX_ERROR;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    cmcf-&gt;phase_engine.handlers = ph;</span><br><span class="line">    n = <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> (i = <span class="number">0</span>; i &lt; NGX_HTTP_LOG_PHASE; i++) &#123;</span><br><span class="line">        h = cmcf-&gt;phases[i].handlers.elts;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">switch</span> (i) &#123;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">case</span> NGX_HTTP_SERVER_REWRITE_PHASE:</span><br><span class="line">            <span class="keyword">if</span> (cmcf-&gt;phase_engine.server_rewrite_index == (<span class="type">ngx_uint_t</span>) <span class="number">-1</span>) &#123;</span><br><span class="line">                cmcf-&gt;phase_engine.server_rewrite_index = n;</span><br><span class="line">            &#125;</span><br><span class="line">            checker = ngx_http_core_rewrite_phase;</span><br><span class="line"></span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">case</span> NGX_HTTP_FIND_CONFIG_PHASE:</span><br><span class="line">            find_config_index = n;</span><br><span class="line"></span><br><span class="line">            ph-&gt;checker = ngx_http_core_find_config_phase;</span><br><span class="line">            n++;</span><br><span class="line">            ph++;</span><br><span class="line"></span><br><span class="line">            <span class="keyword">continue</span>;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">case</span> NGX_HTTP_REWRITE_PHASE:</span><br><span class="line">            <span class="keyword">if</span> (cmcf-&gt;phase_engine.location_rewrite_index == (<span class="type">ngx_uint_t</span>) <span class="number">-1</span>) &#123;</span><br><span class="line">                cmcf-&gt;phase_engine.location_rewrite_index = n;</span><br><span class="line">            &#125;</span><br><span class="line">            checker = ngx_http_core_rewrite_phase;</span><br><span class="line"></span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">case</span> NGX_HTTP_POST_REWRITE_PHASE:</span><br><span class="line">            <span class="keyword">if</span> (use_rewrite) &#123;</span><br><span class="line">                ph-&gt;checker = ngx_http_core_post_rewrite_phase;</span><br><span class="line">                ph-&gt;next = find_config_index;</span><br><span class="line">                n++;</span><br><span class="line">                ph++;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="keyword">continue</span>;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">case</span> NGX_HTTP_ACCESS_PHASE:</span><br><span class="line">            checker = ngx_http_core_access_phase;</span><br><span class="line">            n++;</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">case</span> NGX_HTTP_POST_ACCESS_PHASE:</span><br><span class="line">            <span class="keyword">if</span> (use_access) &#123;</span><br><span class="line">                ph-&gt;checker = ngx_http_core_post_access_phase;</span><br><span class="line">                ph-&gt;next = n;</span><br><span class="line">                ph++;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="keyword">continue</span>;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">case</span> NGX_HTTP_TRY_FILES_PHASE:</span><br><span class="line">            <span class="keyword">if</span> (cmcf-&gt;try_files) &#123;</span><br><span class="line">                ph-&gt;checker = ngx_http_core_try_files_phase;</span><br><span class="line">                n++;</span><br><span class="line">                ph++;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="keyword">continue</span>;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">case</span> NGX_HTTP_CONTENT_PHASE:</span><br><span class="line">            checker = ngx_http_core_content_phase;</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">default</span>:</span><br><span class="line">            checker = ngx_http_core_generic_phase;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        n += cmcf-&gt;phases[i].handlers.nelts;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">for</span> (j = cmcf-&gt;phases[i].handlers.nelts - <span class="number">1</span>; j &gt;=<span class="number">0</span>; j--) &#123;</span><br><span class="line">            ph-&gt;checker = checker;</span><br><span class="line">            ph-&gt;handler = h[j];</span><br><span class="line">            ph-&gt;next = n;</span><br><span class="line">            ph++;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> NGX_OK;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>从上面可以看到 <code>phase_engine</code> 中不存在 <code>NGX_HTTP_LOG_PHASE</code> 阶段的处理，所以在 <code>ngx_http_core_run_phases</code> 中不会调用日志处理阶段。</p>
+<h2 id="NGX-HTTP-LOG-PHASE-阶段调用"><a href="#NGX-HTTP-LOG-PHASE-阶段调用" class="headerlink" title="NGX_HTTP_LOG_PHASE 阶段调用"></a><code>NGX_HTTP_LOG_PHASE</code> 阶段调用</h2><p>在 <code>NGINX</code> 源码中搜索 <code>NGX_HTTP_LOG_PHASE</code>，可以找到日志记录阶段的调用函数 <code>ngx_http_log_request</code>：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">static</span> <span class="type">void</span></span><br><span class="line"><span class="title function_">ngx_http_log_request</span><span class="params">(<span class="type">ngx_http_request_t</span> *r)</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="type">ngx_uint_t</span>                  i, n;</span><br><span class="line">    ngx_http_handler_pt        *log_handler;</span><br><span class="line">    <span class="type">ngx_http_core_main_conf_t</span>  *cmcf;</span><br><span class="line"></span><br><span class="line">    cmcf = ngx_http_get_module_main_conf(r, ngx_http_core_module);</span><br><span class="line"></span><br><span class="line">    log_handler = cmcf-&gt;phases[NGX_HTTP_LOG_PHASE].handlers.elts;</span><br><span class="line">    n = cmcf-&gt;phases[NGX_HTTP_LOG_PHASE].handlers.nelts;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> (i = <span class="number">0</span>; i &lt; n; i++) &#123;</span><br><span class="line">        log_handler[i](r);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>而 <code>ngx_http_log_request</code> 在整个 <code>NGINX</code> 源码中有两个调用点 <code>ngx_http_finalize_request</code> 和 <code>ngx_http_free_request</code>。可以看到日志阶段是在给出应答后才进行调用，<code>NGINX</code> 提供的 <code>$request_time</code> 耗时是从接收到请求信息到给出应答，并且已被客户端接收的耗时。</p>
+<h2 id="ngx-http-log-module"><a href="#ngx-http-log-module" class="headerlink" title="ngx_http_log_module"></a><code>ngx_http_log_module</code></h2><figure class="highlight nginx"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">Syntax:	<span class="attribute">access_log</span> path [format [buffer=size] [gzip[=level]] [flush=time] [if=condition]];</span><br><span class="line"><span class="attribute">access_log</span> <span class="literal">off</span>;</span><br><span class="line">Default:	<span class="attribute">access_log</span> logs/access.log combined;</span><br><span class="line">Context:	http, server, <span class="section">location</span>, if in <span class="section">location</span>, limit_except</span><br></pre></td></tr></table></figure>
+
+<p><code>access_log</code> 指令用来配置访问日志的路径、格式以及缓存。在 <code>format</code> 参数中可以使用 <code>syslog:</code> 前缀来指定使用 <code>syslog</code> 进行日志收集。如果在当前层级（<code>http&#123;&#125;</code>、<code>server&#123;&#125;</code>、<code>location&#123;&#125;</code> 等）使用 <code>access_log off</code> 配置，会在当前层级禁止日志输出。</p>
+<p>如果使用 <code>buffer</code> 或 <code>gzip</code> 参数，<code>access_log</code> 会对输出进行缓存。<code>buffer</code> 参数会指定缓存的大小，<code>flush</code> 参数可以指定 <code>access_log</code> 从缓存刷新到文件的时间。触发缓存内容写入磁盘的条件：</p>
+<ul>
+<li>在下次写 <code>log</code> 时内容无法在 <code>buffer</code> 中缓存；</li>
+<li><code>buffer</code> 中的内容以及比 <code>flush</code> 参数指定的时间更长；</li>
+<li><code>worker</code> 在重新打开文件或者关闭状态。</li>
+</ul>
+<p>如果配置了 <code>gzip</code> 参数，日志被写入磁盘钱会进行压缩，可以指定压缩等级（1-9，1 速度最快、压缩比低）。使用 <code>gzip</code> 时 <code>buffer</code> 参数默认为 64K 字节。</p>
+<p>其实日志目录参数 <code>path</code> 可以使用变量，不过使用变量后在每次写日志时会打开日志文件、写日志、关闭，因此不能使用 <code>buffer</code> 参数。使用 <code>open_log_file_cache</code> 可以缓存文件描述符。</p>
+<figure class="highlight nginx"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">Syntax:	<span class="attribute">open_log_file_cache</span> max=N [inactive=time] [min_uses=N] [valid=time];</span><br><span class="line"><span class="attribute">open_log_file_cache</span> <span class="literal">off</span>;</span><br><span class="line">Default:	<span class="attribute">open_log_file_cache</span> <span class="literal">off</span>;</span><br><span class="line">Context:	http, server, <span class="section">location</span></span><br></pre></td></tr></table></figure>
+
+<p>定义一个缓存，用来保存 <code>access_log</code> 的 <code>path</code> 配置中包含变量文件描述符。</p>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>含义</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>max</code></td>
+<td>缓存可以存储文件描述符最多 <code>max</code> 个</td>
+<td>使用 <code>LRU</code> 踢除</td>
+</tr>
+<tr>
+<td><code>inactive</code></td>
+<td>缓存中文件描述符允许不活跃时间，超过此时间会关闭</td>
+<td></td>
+</tr>
+<tr>
+<td><code>min_uses</code></td>
+<td>与 <code>inactive</code> 配合，在 <code>inactive</code> 时间内使用次数小于 <code>min_uses</code> 值同样会关闭文件描述符。默认为 1。</td>
+<td></td>
+</tr>
+<tr>
+<td><code>valid</code></td>
+<td>文件名有效期设置；超过此时间需要检查文件名是否发生变化（因为使用变量）</td>
+<td></td>
+</tr>
+</tbody></table>
+<h3 id="模块思路"><a href="#模块思路" class="headerlink" title="模块思路"></a>模块思路</h3><p>模块实现思路比较简单，模块在指令解析过程中会创建 <code>ngx_http_log_t</code> 配置结构，并保存在模块的 <code>main_conf</code> 中。在 <code>postconfiguration</code> 阶段会在 <code>NGX_HTTP_LOG_PHASE</code> 处理阶段添加处理函数。<code>postconfiguration</code> 阶段处理函数：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">static</span> <span class="type">ngx_int_t</span></span><br><span class="line"><span class="title function_">ngx_http_log_init</span><span class="params">(<span class="type">ngx_conf_t</span> *cf)</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="type">ngx_str_t</span>                  *value;</span><br><span class="line">    <span class="type">ngx_array_t</span>                 a;</span><br><span class="line">    ngx_http_handler_pt        *h;</span><br><span class="line">    <span class="type">ngx_http_log_fmt_t</span>         *fmt;</span><br><span class="line">    <span class="type">ngx_http_log_main_conf_t</span>   *lmcf;</span><br><span class="line">    <span class="type">ngx_http_core_main_conf_t</span>  *cmcf;</span><br><span class="line"></span><br><span class="line">    lmcf = ngx_http_conf_get_module_main_conf(cf, ngx_http_log_module);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (lmcf-&gt;combined_used) &#123;</span><br><span class="line">        <span class="keyword">if</span> (ngx_array_init(&amp;a, cf-&gt;pool, <span class="number">1</span>, <span class="keyword">sizeof</span>(<span class="type">ngx_str_t</span>)) != NGX_OK) &#123;</span><br><span class="line">            <span class="keyword">return</span> NGX_ERROR;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        value = ngx_array_push(&amp;a);</span><br><span class="line">        <span class="keyword">if</span> (value == <span class="literal">NULL</span>) &#123;</span><br><span class="line">            <span class="keyword">return</span> NGX_ERROR;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        *value = ngx_http_combined_fmt;</span><br><span class="line">        fmt = lmcf-&gt;formats.elts;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (ngx_http_log_compile_format(cf, <span class="literal">NULL</span>, fmt-&gt;ops, &amp;a, <span class="number">0</span>)</span><br><span class="line">            != NGX_CONF_OK)</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="keyword">return</span> NGX_ERROR;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    cmcf = ngx_http_conf_get_module_main_conf(cf, ngx_http_core_module);</span><br><span class="line"></span><br><span class="line">    h = ngx_array_push(&amp;cmcf-&gt;phases[NGX_HTTP_LOG_PHASE].handlers);</span><br><span class="line">    <span class="keyword">if</span> (h == <span class="literal">NULL</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span> NGX_ERROR;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    *h = ngx_http_log_handler;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> NGX_OK;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+        </div>
+        
+
+    </article>
+    
+    <section id="comments">
+        
+    </section>
+
+
+    
+
+</main>
+
+
+<aside style="" id="sidebar" class="aside aside-fixture">
+    <div class="toc-sidebar">
+        <nav id="toc" class="article-toc">
+            <h3 class="toc-title">文章目录</h3>
+            <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#phase-engine%E5%88%9D%E5%A7%8B%E5%8C%96"><span class="toc-number">1.</span> <span class="toc-text">phase_engine初始化</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#NGX-HTTP-LOG-PHASE-%E9%98%B6%E6%AE%B5%E8%B0%83%E7%94%A8"><span class="toc-number">2.</span> <span class="toc-text">NGX_HTTP_LOG_PHASE 阶段调用</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#ngx-http-log-module"><span class="toc-number">3.</span> <span class="toc-text">ngx_http_log_module</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%A8%A1%E5%9D%97%E6%80%9D%E8%B7%AF"><span class="toc-number">3.1.</span> <span class="toc-text">模块思路</span></a></li></ol></li></ol>
+        </nav>
+    </div>
+</aside>
+
+
+
+
+
+        </section>
+        <footer class="hidden lg:block fixed bottom-0 left-0 sm:w-1/12 lg:w-1/6 bg-gray-100 z-40">
+    
+    <div class="footer-social-links">
+        
+            <a target="_blank" rel="noopener" href="https://github.com/juzipeek">
+                <i class="iconfont icon-github"></i>
+            </a>
+        
+    </div>
+    
+    
+</footer>
+
+        <div id="mask" class="hidden mask fixed inset-0 bg-gray-900 opacity-75 z-40"></div>
+        <div id="search-view-container" class="hidden shadow-xl"></div>
+        
+<script src="/js/dom-event.min.js"></script>
+
+
+
+<script src="/js/local-search.min.js"></script>
+
+
+
+    <script src="//cdn.jsdelivr.net/npm/lightgallery.js@1.1.3/dist/js/lightgallery.min.js"></script>
+    
+<script src="/js/light-gallery.min.js"></script>
+
+
+
+
+
+
+    </body>
+</html>

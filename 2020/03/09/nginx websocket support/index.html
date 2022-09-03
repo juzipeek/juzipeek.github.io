@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html  lang="zh-CN" >
+    <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, minimum-scale=1, initial-scale=1, maximum-scale=5, viewport-fit=cover">
+    <title>NGINX WebSocket 支持 | 自留地</title>
+    <meta name="description" content="NGINX 处理WebSocket 处理的的关键点是 Upgrade 握手处理, 在 NGINX 中 Upgrade 是预定义的请求处理头. 在请求处理过程中会解析请求头, 并在存储在 ngx_http_headers_in_t::upgrade 中. 在 proxy_pass 模块内, 当服务端应答行为 HTTP&#x2F;1.1 101 Switching Protocols 时, NGINX 对请求进">
+<meta property="og:type" content="article">
+<meta property="og:title" content="NGINX WebSocket 支持">
+<meta property="og:url" content="https://juzipeek.github.io/2020/03/09/nginx%20websocket%20support/index.html">
+<meta property="og:site_name" content="自留地">
+<meta property="og:description" content="NGINX 处理WebSocket 处理的的关键点是 Upgrade 握手处理, 在 NGINX 中 Upgrade 是预定义的请求处理头. 在请求处理过程中会解析请求头, 并在存储在 ngx_http_headers_in_t::upgrade 中. 在 proxy_pass 模块内, 当服务端应答行为 HTTP&#x2F;1.1 101 Switching Protocols 时, NGINX 对请求进">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2020-03-08T16:00:00.000Z">
+<meta property="article:modified_time" content="2022-09-03T17:44:11.322Z">
+<meta property="article:author" content="zhou cheng jie">
+<meta property="article:tag" content="NGINX">
+<meta property="article:tag" content="C">
+<meta name="twitter:card" content="summary">
+
+    
+    <link rel="icon" href="/images/favicon.ico" type="image/x-icon">
+
+    
+<link rel="stylesheet" href="/css/common.min.css">
+
+
+
+    
+    
+    
+    
+        <link href="//cdn.jsdelivr.net/npm/lightgallery.js@1.1.3/dist/css/lightgallery.min.css" rel="stylesheet">
+    
+    
+    
+<link rel="stylesheet" href="/css/iconfont.min.css">
+
+    
+    <script>
+        (function(e,t,n,i,s,a,c){e[n]=e[n]||function(){(e[n].q=e[n].q||[]).push(arguments)}
+        ;a=t.createElement(i);c=t.getElementsByTagName(i)[0];a.async=true;a.src=s
+        ;c.parentNode.insertBefore(a,c)
+        })(window,document,"galite","script","https://cdn.jsdelivr.net/npm/ga-lite@2/dist/ga-lite.min.js");
+
+        galite('create', 'G-HFGFGEWD53', 'auto');
+        galite('send', 'pageview');
+    </script>
+    
+<meta name="generator" content="Hexo 5.4.2"></head>
+
+    <body>
+        <header class="header header-fixture">
+    <div class="profile-search-wrap flex sm:block">
+        
+        
+        <div class="profile sm:text-center md:px-1 lg:px-3 sm:pb-4 sm:pt-6">
+            <a id="avatar" role="link" href="https://github.com/juzipeek" class="inline-block lg:w-16 lg:h-16 w-8 h-8 m-2" target="_blank" rel="noopener" rel="noreferrer" >
+                <img src="/images/yellow.jpg" class="rounded-full" alt="avatar">
+            </a>
+            <h2 id="name" class="hidden lg:block">zhou cheng jie</h2>
+            <h3 id="title" class="hidden lg:block">coder</h3>
+            
+            <small id="location" class="hidden lg:block">
+                <i class="iconfont icon-map-icon"></i>
+                BeiJing, China
+            </small>
+            
+        </div>
+        
+        
+<div class="search flex-1 flex lg:inline-block sm:hidden lg:px-4 lg:mt-2 lg:mb-4 lg:w-full">
+    <form id="search-form" class="my-auto flex-1 lg:border lg:border-solid lg:border-gray-200">
+        <div class="input-group table bg-gray-100 lg:bg-white w-full">
+            <input id="search-input" type="text" placeholder="搜索" class="inline-block w-full bg-gray-100 lg:bg-white p-1">
+            <span class="table-cell">
+                <button name="search tigger button" disabled>
+                    <i class="iconfont icon-search m-2"></i>
+                </button>
+            </span>
+        </div>
+    </form>
+        
+<div id="content-json" data-placeholder="搜索" class="invisible hidden">/content.json</div>
+<script id="search-teamplate" type="text/html" data-path="/content.json">
+    <div>
+        <div class="search-header bg-gray-400">
+            <input id="actual-search-input" model="keyword" ref="input" class="inline-block w-full h-10 px-2 py-1" placeholder="搜索" type="text">
+        </div>
+        <div class="search-result bg-gray-200">
+            {{#each searchPosts}}
+            <a href="/{{ path }}" class="result-item block px-2 pb-3 mb-1 pt-1 hover:bg-indigo-100">
+                <i class="iconfont icon-file"></i>
+                <h1 class="result-title inline font-medium text-lg">{{ title }}</h1>
+                <p class="result-content text-gray-600 text-sm">{{{ text }}}</p>
+            </a>
+            {{/each}}
+        </div>
+    </div>
+</script>
+
+</div>
+
+
+        <button name="menu toogle button" id="menu-toggle-btn" class="block sm:hidden p-3" role="button" aria-expanded="false">
+            <i class="iconfont icon-hamburger"></i>
+        </button>
+    </div>
+    <nav id="menu-nav" class="hidden sm:flex flex-col">
+        
+        
+            <div class="menu-item menu-home" role="menuitem">
+                <a href="/.">
+                    <i class="iconfont icon-home" aria-hidden="true"></i>
+                    <span class="menu-title">首页</span>
+                </a>
+            </div>
+        
+        
+            <div class="menu-item menu-archives" role="menuitem">
+                <a href="/archives">
+                    <i class="iconfont icon-archive" aria-hidden="true"></i>
+                    <span class="menu-title">归档</span>
+                </a>
+            </div>
+        
+        
+            <div class="menu-item menu-categories" role="menuitem">
+                <a href="/categories">
+                    <i class="iconfont icon-folder" aria-hidden="true"></i>
+                    <span class="menu-title">分类</span>
+                </a>
+            </div>
+        
+        
+            <div class="menu-item menu-tags" role="menuitem">
+                <a href="/tags">
+                    <i class="iconfont icon-tag" aria-hidden="true"></i>
+                    <span class="menu-title">标签</span>
+                </a>
+            </div>
+        
+        
+            <div class="menu-item menu-about" role="menuitem">
+                <a href="/about">
+                    <i class="iconfont icon-cup" aria-hidden="true"></i>
+                    <span class="menu-title">关于</span>
+                </a>
+            </div>
+        
+        
+<div class="social-links flex sm:flex-col lg:hidden mt-5">
+    
+        <span class="social-item text-center">
+            <a target="_blank" rel="noopener" href="https://github.com/juzipeek">
+                <i class="iconfont social-icon icon-github"></i>
+                <span class="menu-title hidden lg:inline">menu.github</span>
+            </a>
+        </span>
+    
+</div>
+
+
+    </nav>
+</header>
+
+        <section class="main-section">
+            
+    <main class="flex-1 px-4 py-14 md:px-5 lg:px-8 lg:py-4 relative min-h-screen">
+    
+
+    <article class="content article article-archives article-type-list" itemscope="">
+        <header class="article-header">
+            
+    
+        <h1 class="article-title text-lg" itemprop="name">
+            NGINX WebSocket 支持
+        </h1>
+    
+
+
+
+            <p class="article-meta mb-3 text-xs">
+                <span class="article-date">
+    <i class="iconfont icon-calendar-check"></i>
+	<a href="/2020/03/09/nginx%20websocket%20support/" class="article-date">
+	  <time datetime="2020-03-08T16:00:00.000Z" itemprop="datePublished">3月 9</time>
+	</a>
+</span>
+
+                
+    <span class="article-category">
+    <i class="iconfont icon-folder"></i>
+    <a class="article-category-link" href="/categories/NGINX/">NGINX</a>
+  </span>
+
+
+                
+    <span class="article-tags">
+    <i class="iconfont icon-tag"></i>
+    <a class="article-tag-none-link" href="/tags/C/" rel="tag">C</a>, <a class="article-tag-none-link" href="/tags/NGINX/" rel="tag">NGINX</a>
+  </span>
+
+
+                <span class="_partial/post-comment"><i class="icon icon-comment"></i>
+                    <a href="/2020/03/09/nginx%20websocket%20support/#comments" class="article-comment-link">
+                        评论
+                    </a>
+                </span>
+                
+    
+        <span class="post-wordcount" itemprop="wordCount">字数统计: 557(字)</span>
+    
+    
+        <span class="post-readcount" itemprop="timeRequired">阅读时长: 2(分)</span>
+    
+
+
+            </p>
+        </header>
+        <div class="marked-body article-body">
+            <h2 id="NGINX-处理"><a href="#NGINX-处理" class="headerlink" title="NGINX 处理"></a>NGINX 处理</h2><p>WebSocket 处理的的关键点是 <code>Upgrade</code> 握手处理, 在 NGINX 中 <code>Upgrade</code> 是预定义的请求处理头. 在请求处理过程中会解析请求头, 并在存储在 <code>ngx_http_headers_in_t::upgrade</code> 中. 在 <code>proxy_pass</code> 模块内, 当服务端应答行为 <code>HTTP/1.1 101 Switching Protocols</code> 时, NGINX 对请求进行升级, 只进行 <code>package</code> 转发, 并且后端负载不会变化.</p>
+<p><code>proxy_pass</code> 模块处理上游 server 应答头, 检测到应答状态码为 <code>101</code> 时会标记需要进行升级 <code>upgrade</code>.</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">static</span> <span class="type">ngx_int_t</span></span><br><span class="line"><span class="title function_">ngx_http_proxy_process_header</span><span class="params">(<span class="type">ngx_http_request_t</span> *r)</span></span><br><span class="line">&#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> ( ;; ) &#123;</span><br><span class="line"></span><br><span class="line">        rc = ngx_http_parse_header_line(r, &amp;r-&gt;upstream-&gt;buffer, <span class="number">1</span>);</span><br><span class="line">        <span class="comment">// ... 省略无关代码</span></span><br><span class="line">        <span class="comment">// 上游应答头解析结束</span></span><br><span class="line">        <span class="keyword">if</span> (rc == NGX_HTTP_PARSE_HEADER_DONE) &#123;</span><br><span class="line">            <span class="comment">/* a whole header has been parsed successfully */</span></span><br><span class="line"></span><br><span class="line">            ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r-&gt;connection-&gt;<span class="built_in">log</span>, <span class="number">0</span>,</span><br><span class="line">                           <span class="string">&quot;http proxy header done&quot;</span>);</span><br><span class="line"></span><br><span class="line">            u = r-&gt;upstream;</span><br><span class="line"></span><br><span class="line">            <span class="keyword">if</span> (u-&gt;headers_in.chunked) &#123;</span><br><span class="line">                u-&gt;headers_in.content_length_n = <span class="number">-1</span>;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="comment">// NGX_HTTP_SWITCHING_PROTOCOLS == 101</span></span><br><span class="line">            <span class="comment">// 应答状态码为 101, 标记需要升级为套接字通讯</span></span><br><span class="line">            <span class="keyword">if</span> (u-&gt;headers_in.status_n == NGX_HTTP_SWITCHING_PROTOCOLS) &#123;</span><br><span class="line">                u-&gt;keepalive = <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">                <span class="keyword">if</span> (r-&gt;headers_in.upgrade) &#123;</span><br><span class="line">                    u-&gt;upgrade = <span class="number">1</span>;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="keyword">return</span> NGX_OK;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// ...... 省略无关代码</span></span><br><span class="line">        <span class="keyword">return</span> NGX_HTTP_UPSTREAM_INVALID_HEADER;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>在给客户端发送应答时判断 <code>upgrade</code> 标记, 将上游读写事件修改为 <code>ngx_http_upstream_upgraded_read_upstream\ngx_http_upstream_upgraded_write_upstream</code>, 下游读写事件修改为 <code>ngx_http_upstream_upgraded_read_downstream\ngx_http_upstream_upgraded_write_downstream</code>. 当上下游读写事件到来时直接调用响应的处理函数, 而不经过 <code>proxy_pass</code> 模块的 <code>ngx_http_upstream_init</code> 等一系列回调函数.</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">static</span> <span class="type">void</span></span><br><span class="line"><span class="title function_">ngx_http_upstream_send_response</span><span class="params">(<span class="type">ngx_http_request_t</span> *r, <span class="type">ngx_http_upstream_t</span> *u)</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="type">ssize_t</span>                    n;</span><br><span class="line">    <span class="type">ngx_int_t</span>                  rc;</span><br><span class="line">    <span class="type">ngx_event_pipe_t</span>          *p;</span><br><span class="line">    <span class="type">ngx_connection_t</span>          *c;</span><br><span class="line">    <span class="type">ngx_http_core_loc_conf_t</span>  *clcf;</span><br><span class="line"></span><br><span class="line">    rc = ngx_http_send_header(r);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (rc == NGX_ERROR || rc &gt; NGX_OK || r-&gt;post_action) &#123;</span><br><span class="line">        ngx_http_upstream_finalize_request(r, u, rc);</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    u-&gt;header_sent = <span class="number">1</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (u-&gt;upgrade) &#123;</span><br><span class="line">        <span class="comment">// 升级操作</span></span><br><span class="line">        ngx_http_upstream_upgrade(r, u);</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// ... 省略无关代码</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="type">static</span> <span class="type">void</span></span><br><span class="line"><span class="title function_">ngx_http_upstream_upgrade</span><span class="params">(<span class="type">ngx_http_request_t</span> *r, <span class="type">ngx_http_upstream_t</span> *u)</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="type">ngx_connection_t</span>          *c;</span><br><span class="line">    <span class="type">ngx_http_core_loc_conf_t</span>  *clcf;</span><br><span class="line"></span><br><span class="line">    c = r-&gt;connection;</span><br><span class="line">    clcf = ngx_http_get_module_loc_conf(r, ngx_http_core_module);</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* <span class="doctag">TODO:</span> prevent upgrade if not requested or not possible */</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (r != r-&gt;main) &#123;</span><br><span class="line">        ngx_log_error(NGX_LOG_ERR, c-&gt;<span class="built_in">log</span>, <span class="number">0</span>,</span><br><span class="line">                      <span class="string">&quot;connection upgrade in subrequest&quot;</span>);</span><br><span class="line">        ngx_http_upstream_finalize_request(r, u, NGX_ERROR);</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    r-&gt;keepalive = <span class="number">0</span>;</span><br><span class="line">    c-&gt;<span class="built_in">log</span>-&gt;action = <span class="string">&quot;proxying upgraded connection&quot;</span>;</span><br><span class="line"></span><br><span class="line">    u-&gt;read_event_handler = ngx_http_upstream_upgraded_read_upstream;</span><br><span class="line">    u-&gt;write_event_handler = ngx_http_upstream_upgraded_write_upstream;</span><br><span class="line">    r-&gt;read_event_handler = ngx_http_upstream_upgraded_read_downstream;</span><br><span class="line">    r-&gt;write_event_handler = ngx_http_upstream_upgraded_write_downstream;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (clcf-&gt;tcp_nodelay) &#123;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (ngx_tcp_nodelay(c) != NGX_OK) &#123;</span><br><span class="line">            ngx_http_upstream_finalize_request(r, u, NGX_ERROR);</span><br><span class="line">            <span class="keyword">return</span>;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (ngx_tcp_nodelay(u-&gt;peer.connection) != NGX_OK) &#123;</span><br><span class="line">            ngx_http_upstream_finalize_request(r, u, NGX_ERROR);</span><br><span class="line">            <span class="keyword">return</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (ngx_http_send_special(r, NGX_HTTP_FLUSH) == NGX_ERROR) &#123;</span><br><span class="line">        ngx_http_upstream_finalize_request(r, u, NGX_ERROR);</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (u-&gt;peer.connection-&gt;read-&gt;ready</span><br><span class="line">        || u-&gt;buffer.pos != u-&gt;buffer.last)</span><br><span class="line">    &#123;</span><br><span class="line">        ngx_post_event(c-&gt;read, &amp;ngx_posted_events);</span><br><span class="line">        ngx_http_upstream_process_upgraded(r, <span class="number">1</span>, <span class="number">1</span>);</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    ngx_http_upstream_process_upgraded(r, <span class="number">0</span>, <span class="number">1</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+        </div>
+        
+
+    </article>
+    
+    <section id="comments">
+        
+    </section>
+
+
+    
+
+</main>
+
+
+<aside style="" id="sidebar" class="aside aside-fixture">
+    <div class="toc-sidebar">
+        <nav id="toc" class="article-toc">
+            <h3 class="toc-title">文章目录</h3>
+            <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#NGINX-%E5%A4%84%E7%90%86"><span class="toc-number">1.</span> <span class="toc-text">NGINX 处理</span></a></li></ol>
+        </nav>
+    </div>
+</aside>
+
+
+
+
+
+        </section>
+        <footer class="hidden lg:block fixed bottom-0 left-0 sm:w-1/12 lg:w-1/6 bg-gray-100 z-40">
+    
+    <div class="footer-social-links">
+        
+            <a target="_blank" rel="noopener" href="https://github.com/juzipeek">
+                <i class="iconfont icon-github"></i>
+            </a>
+        
+    </div>
+    
+    
+</footer>
+
+        <div id="mask" class="hidden mask fixed inset-0 bg-gray-900 opacity-75 z-40"></div>
+        <div id="search-view-container" class="hidden shadow-xl"></div>
+        
+<script src="/js/dom-event.min.js"></script>
+
+
+
+<script src="/js/local-search.min.js"></script>
+
+
+
+    <script src="//cdn.jsdelivr.net/npm/lightgallery.js@1.1.3/dist/js/lightgallery.min.js"></script>
+    
+<script src="/js/light-gallery.min.js"></script>
+
+
+
+
+
+
+    </body>
+</html>

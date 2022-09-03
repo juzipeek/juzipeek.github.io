@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html  lang="zh-CN" >
+    <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, minimum-scale=1, initial-scale=1, maximum-scale=5, viewport-fit=cover">
+    <title>Nginx stream 模块 | 自留地</title>
+    <meta name="description" content="stream 模块在 NGINX 内部四层协议处理是从 ngx_stream_module 模块的 stream 指令处理开始。ngx_stream_module 是核心模块，作用与 ngx_http_module 相同。 处理阶段定义在 NGX_STREAM_MODULE 模块中定义了：NGX_STREAM_POST_ACCEPT_PHASE、NGX_STREAM_PREACCESS_PHASE">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Nginx stream 模块">
+<meta property="og:url" content="https://juzipeek.github.io/2018/12/05/Nginx%20stream%20%E6%A8%A1%E5%9D%97/index.html">
+<meta property="og:site_name" content="自留地">
+<meta property="og:description" content="stream 模块在 NGINX 内部四层协议处理是从 ngx_stream_module 模块的 stream 指令处理开始。ngx_stream_module 是核心模块，作用与 ngx_http_module 相同。 处理阶段定义在 NGX_STREAM_MODULE 模块中定义了：NGX_STREAM_POST_ACCEPT_PHASE、NGX_STREAM_PREACCESS_PHASE">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2018-12-04T16:00:00.000Z">
+<meta property="article:modified_time" content="2022-09-03T17:44:11.313Z">
+<meta property="article:author" content="zhou cheng jie">
+<meta property="article:tag" content="NGINX">
+<meta property="article:tag" content="C">
+<meta name="twitter:card" content="summary">
+
+    
+    <link rel="icon" href="/images/favicon.ico" type="image/x-icon">
+
+    
+<link rel="stylesheet" href="/css/common.min.css">
+
+
+
+    
+    
+    
+    
+        <link href="//cdn.jsdelivr.net/npm/lightgallery.js@1.1.3/dist/css/lightgallery.min.css" rel="stylesheet">
+    
+    
+    
+<link rel="stylesheet" href="/css/iconfont.min.css">
+
+    
+    <script>
+        (function(e,t,n,i,s,a,c){e[n]=e[n]||function(){(e[n].q=e[n].q||[]).push(arguments)}
+        ;a=t.createElement(i);c=t.getElementsByTagName(i)[0];a.async=true;a.src=s
+        ;c.parentNode.insertBefore(a,c)
+        })(window,document,"galite","script","https://cdn.jsdelivr.net/npm/ga-lite@2/dist/ga-lite.min.js");
+
+        galite('create', 'G-HFGFGEWD53', 'auto');
+        galite('send', 'pageview');
+    </script>
+    
+<meta name="generator" content="Hexo 5.4.2"></head>
+
+    <body>
+        <header class="header header-fixture">
+    <div class="profile-search-wrap flex sm:block">
+        
+        
+        <div class="profile sm:text-center md:px-1 lg:px-3 sm:pb-4 sm:pt-6">
+            <a id="avatar" role="link" href="https://github.com/juzipeek" class="inline-block lg:w-16 lg:h-16 w-8 h-8 m-2" target="_blank" rel="noopener" rel="noreferrer" >
+                <img src="/images/yellow.jpg" class="rounded-full" alt="avatar">
+            </a>
+            <h2 id="name" class="hidden lg:block">zhou cheng jie</h2>
+            <h3 id="title" class="hidden lg:block">coder</h3>
+            
+            <small id="location" class="hidden lg:block">
+                <i class="iconfont icon-map-icon"></i>
+                BeiJing, China
+            </small>
+            
+        </div>
+        
+        
+<div class="search flex-1 flex lg:inline-block sm:hidden lg:px-4 lg:mt-2 lg:mb-4 lg:w-full">
+    <form id="search-form" class="my-auto flex-1 lg:border lg:border-solid lg:border-gray-200">
+        <div class="input-group table bg-gray-100 lg:bg-white w-full">
+            <input id="search-input" type="text" placeholder="搜索" class="inline-block w-full bg-gray-100 lg:bg-white p-1">
+            <span class="table-cell">
+                <button name="search tigger button" disabled>
+                    <i class="iconfont icon-search m-2"></i>
+                </button>
+            </span>
+        </div>
+    </form>
+        
+<div id="content-json" data-placeholder="搜索" class="invisible hidden">/content.json</div>
+<script id="search-teamplate" type="text/html" data-path="/content.json">
+    <div>
+        <div class="search-header bg-gray-400">
+            <input id="actual-search-input" model="keyword" ref="input" class="inline-block w-full h-10 px-2 py-1" placeholder="搜索" type="text">
+        </div>
+        <div class="search-result bg-gray-200">
+            {{#each searchPosts}}
+            <a href="/{{ path }}" class="result-item block px-2 pb-3 mb-1 pt-1 hover:bg-indigo-100">
+                <i class="iconfont icon-file"></i>
+                <h1 class="result-title inline font-medium text-lg">{{ title }}</h1>
+                <p class="result-content text-gray-600 text-sm">{{{ text }}}</p>
+            </a>
+            {{/each}}
+        </div>
+    </div>
+</script>
+
+</div>
+
+
+        <button name="menu toogle button" id="menu-toggle-btn" class="block sm:hidden p-3" role="button" aria-expanded="false">
+            <i class="iconfont icon-hamburger"></i>
+        </button>
+    </div>
+    <nav id="menu-nav" class="hidden sm:flex flex-col">
+        
+        
+            <div class="menu-item menu-home" role="menuitem">
+                <a href="/.">
+                    <i class="iconfont icon-home" aria-hidden="true"></i>
+                    <span class="menu-title">首页</span>
+                </a>
+            </div>
+        
+        
+            <div class="menu-item menu-archives" role="menuitem">
+                <a href="/archives">
+                    <i class="iconfont icon-archive" aria-hidden="true"></i>
+                    <span class="menu-title">归档</span>
+                </a>
+            </div>
+        
+        
+            <div class="menu-item menu-categories" role="menuitem">
+                <a href="/categories">
+                    <i class="iconfont icon-folder" aria-hidden="true"></i>
+                    <span class="menu-title">分类</span>
+                </a>
+            </div>
+        
+        
+            <div class="menu-item menu-tags" role="menuitem">
+                <a href="/tags">
+                    <i class="iconfont icon-tag" aria-hidden="true"></i>
+                    <span class="menu-title">标签</span>
+                </a>
+            </div>
+        
+        
+            <div class="menu-item menu-about" role="menuitem">
+                <a href="/about">
+                    <i class="iconfont icon-cup" aria-hidden="true"></i>
+                    <span class="menu-title">关于</span>
+                </a>
+            </div>
+        
+        
+<div class="social-links flex sm:flex-col lg:hidden mt-5">
+    
+        <span class="social-item text-center">
+            <a target="_blank" rel="noopener" href="https://github.com/juzipeek">
+                <i class="iconfont social-icon icon-github"></i>
+                <span class="menu-title hidden lg:inline">menu.github</span>
+            </a>
+        </span>
+    
+</div>
+
+
+    </nav>
+</header>
+
+        <section class="main-section">
+            
+    <main class="flex-1 px-4 py-14 md:px-5 lg:px-8 lg:py-4 relative min-h-screen">
+    
+
+    <article class="content article article-archives article-type-list" itemscope="">
+        <header class="article-header">
+            
+    
+        <h1 class="article-title text-lg" itemprop="name">
+            Nginx stream 模块
+        </h1>
+    
+
+
+
+            <p class="article-meta mb-3 text-xs">
+                <span class="article-date">
+    <i class="iconfont icon-calendar-check"></i>
+	<a href="/2018/12/05/Nginx%20stream%20%E6%A8%A1%E5%9D%97/" class="article-date">
+	  <time datetime="2018-12-04T16:00:00.000Z" itemprop="datePublished">12月 5</time>
+	</a>
+</span>
+
+                
+    <span class="article-category">
+    <i class="iconfont icon-folder"></i>
+    <a class="article-category-link" href="/categories/NGINX/">NGINX</a>
+  </span>
+
+
+                
+    <span class="article-tags">
+    <i class="iconfont icon-tag"></i>
+    <a class="article-tag-none-link" href="/tags/C/" rel="tag">C</a>, <a class="article-tag-none-link" href="/tags/NGINX/" rel="tag">NGINX</a>
+  </span>
+
+
+                <span class="_partial/post-comment"><i class="icon icon-comment"></i>
+                    <a href="/2018/12/05/Nginx%20stream%20%E6%A8%A1%E5%9D%97/#comments" class="article-comment-link">
+                        评论
+                    </a>
+                </span>
+                
+    
+        <span class="post-wordcount" itemprop="wordCount">字数统计: 1.1k(字)</span>
+    
+    
+        <span class="post-readcount" itemprop="timeRequired">阅读时长: 5(分)</span>
+    
+
+
+            </p>
+        </header>
+        <div class="marked-body article-body">
+            <h2 id="stream-模块"><a href="#stream-模块" class="headerlink" title="stream 模块"></a>stream 模块</h2><p>在 <code>NGINX</code> 内部四层协议处理是从 <code>ngx_stream_module</code> 模块的 <code>stream</code> 指令处理开始。<code>ngx_stream_module</code> 是核心模块，作用与 <code>ngx_http_module</code> 相同。</p>
+<h2 id="处理阶段定义"><a href="#处理阶段定义" class="headerlink" title="处理阶段定义"></a>处理阶段定义</h2><p>在 <code>NGX_STREAM_MODULE</code> 模块中定义了：<code>NGX_STREAM_POST_ACCEPT_PHASE</code>、<code>NGX_STREAM_PREACCESS_PHASE</code>、<code>NGX_STREAM_ACCESS_PHASE</code>、<code>NGX_STREAM_SSL_PHASE</code>、<code>NGX_STREAM_PREREAD_PHASE</code>、<code>NGX_STREAM_CONTENT_PHASE</code>、<code>NGX_STREAM_LOG_PHASE</code> 七个处理阶段。阅读 <code>ngx_stream_block</code> 中调用的 <code>ngx_stream_init_phase_handlers</code> 函数代码：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">static</span> <span class="type">ngx_int_t</span></span><br><span class="line"><span class="title function_">ngx_stream_init_phase_handlers</span><span class="params">(<span class="type">ngx_conf_t</span> *cf, <span class="type">ngx_stream_core_main_conf_t</span> *cmcf)</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="type">ngx_int_t</span>                     j;</span><br><span class="line">    <span class="type">ngx_uint_t</span>                    i, n;</span><br><span class="line">    ngx_stream_handler_pt        *h;</span><br><span class="line">    <span class="type">ngx_stream_phase_handler_t</span>   *ph;</span><br><span class="line">    ngx_stream_phase_handler_pt   checker;</span><br><span class="line"></span><br><span class="line">    n = <span class="number">1</span> <span class="comment">/* content phase */</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> (i = <span class="number">0</span>; i &lt; NGX_STREAM_LOG_PHASE; i++) &#123;</span><br><span class="line">        n += cmcf-&gt;phases[i].handlers.nelts;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    ph = ngx_pcalloc(cf-&gt;pool, n * <span class="keyword">sizeof</span>(<span class="type">ngx_stream_phase_handler_t</span>) + <span class="keyword">sizeof</span>(<span class="type">void</span> *));</span><br><span class="line">    <span class="keyword">if</span> (ph == <span class="literal">NULL</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span> NGX_ERROR;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    cmcf-&gt;phase_engine.handlers = ph;</span><br><span class="line">    n = <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> (i = <span class="number">0</span>; i &lt; NGX_STREAM_LOG_PHASE; i++) &#123;</span><br><span class="line">        h = cmcf-&gt;phases[i].handlers.elts;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">switch</span> (i) &#123;</span><br><span class="line">        <span class="keyword">case</span> NGX_STREAM_PREREAD_PHASE:</span><br><span class="line">            checker = ngx_stream_core_preread_phase;</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 最后的 continue; 说明这个阶段只能有一个处理函数</span></span><br><span class="line">        <span class="keyword">case</span> NGX_STREAM_CONTENT_PHASE:</span><br><span class="line">            ph-&gt;checker = ngx_stream_core_content_phase;</span><br><span class="line">            n++;</span><br><span class="line">            ph++;</span><br><span class="line">            <span class="keyword">continue</span>;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">default</span>:</span><br><span class="line">            checker = ngx_stream_core_generic_phase;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        n += cmcf-&gt;phases[i].handlers.nelts;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">for</span> (j = cmcf-&gt;phases[i].handlers.nelts - <span class="number">1</span>; j &gt;= <span class="number">0</span>; j--) &#123;</span><br><span class="line">            ph-&gt;checker = checker;</span><br><span class="line">            ph-&gt;handler = h[j];</span><br><span class="line">            ph-&gt;next = n;</span><br><span class="line">            ph++;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> NGX_OK;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>七个阶段中除了 <code>NGX_STREAM_CONTENT_PHASE</code> 阶段不允许介入，其他阶段用户都可以介入处理。</p>
+<h2 id="ngx-stream-optimize-servers"><a href="#ngx-stream-optimize-servers" class="headerlink" title="ngx_stream_optimize_servers"></a>ngx_stream_optimize_servers</h2><p>调用 <code>ngx_stream_add_ports</code> 和 <code>ngx_stream_optimize_servers</code> 添加端口监听的回调函数。在 <code>ngx_stream_optimize_servers</code> 函数中，把绑定的 <code>IP</code> 和端口以及对应的配置赋值到所监听结构体的 <code>servers</code> 的变量。添加的目的主要是为了能够在请求到达的时候找到对应的配置，也就是为了根据五元组中目的 <code>IP</code> 和端口来获取监听该 <code>IP</code> 和端口所对应的配置。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">static</span> <span class="type">char</span> *</span><br><span class="line"><span class="title function_">ngx_stream_optimize_servers</span><span class="params">(<span class="type">ngx_conf_t</span> *cf, <span class="type">ngx_array_t</span> *ports)</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="type">ngx_uint_t</span>                   i, p, last, bind_wildcard;</span><br><span class="line">    <span class="type">ngx_listening_t</span>             *ls;</span><br><span class="line">    <span class="type">ngx_stream_port_t</span>           *stport;</span><br><span class="line">    <span class="type">ngx_stream_conf_port_t</span>      *port;</span><br><span class="line">    <span class="type">ngx_stream_conf_addr_t</span>      *addr;</span><br><span class="line">    <span class="type">ngx_stream_core_srv_conf_t</span>  *cscf;</span><br><span class="line"></span><br><span class="line">    port = ports-&gt;elts;</span><br><span class="line">    <span class="keyword">for</span> (p = <span class="number">0</span>; p &lt; ports-&gt;nelts; p++) &#123;</span><br><span class="line">		<span class="comment">// 对 PORT 下的 IP 地址排序。宽绑定（通配符绑定）的排序到最后。</span></span><br><span class="line">        <span class="comment">// 设置了特殊标识需要 BIND 的排在最前。不需要 BIND 的排到中间位置。</span></span><br><span class="line">        ngx_sort(port[p].addrs.elts, (<span class="type">size_t</span>) port[p].addrs.nelts, <span class="keyword">sizeof</span>(<span class="type">ngx_stream_conf_addr_t</span>), ngx_stream_cmp_conf_addrs);</span><br><span class="line"></span><br><span class="line">        addr = port[p].addrs.elts;</span><br><span class="line">        last = port[p].addrs.nelts;</span><br><span class="line"></span><br><span class="line">        <span class="comment">/*</span></span><br><span class="line"><span class="comment">         * if there is the binding to the &quot;*:port&quot; then we need to bind()</span></span><br><span class="line"><span class="comment">         * to the &quot;*:port&quot; only and ignore the other bindings</span></span><br><span class="line"><span class="comment">         */</span></span><br><span class="line"></span><br><span class="line">        <span class="comment">// 最后一个地址是否是宽绑定的，</span></span><br><span class="line">        <span class="comment">// 如果是那么没有特殊标识设置的就不需要绑定监听了，</span></span><br><span class="line">        <span class="comment">// 只需要绑定监听这个宽绑定 IP 就可以。</span></span><br><span class="line">        <span class="keyword">if</span> (addr[last - <span class="number">1</span>].opt.wildcard) &#123;</span><br><span class="line">            addr[last - <span class="number">1</span>].opt.bind = <span class="number">1</span>;</span><br><span class="line">            bind_wildcard = <span class="number">1</span>;</span><br><span class="line"></span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            bind_wildcard = <span class="number">0</span>;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        i = <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">while</span> (i &lt; last) &#123;</span><br><span class="line">			<span class="comment">// 有宽绑定且不需要单独绑定</span></span><br><span class="line">            <span class="keyword">if</span> (bind_wildcard &amp;&amp; !addr[i].opt.bind) &#123;</span><br><span class="line">                i++;</span><br><span class="line">                <span class="keyword">continue</span>;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="comment">// 如果没有宽绑定，每个地址都需要监听</span></span><br><span class="line">            <span class="comment">// 如果有宽绑定，只需要绑定设置了特殊标识的地址和宽绑定地址，</span></span><br><span class="line">            <span class="comment">// 不需要绑定监听的都会被添加到宽绑定地址的监听数组中(ls-&gt;servers-&gt;addrs)</span></span><br><span class="line">            ls = ngx_create_listening(cf, &amp;addr[i].opt.sockaddr.sockaddr, addr[i].opt.socklen);</span><br><span class="line">            <span class="keyword">if</span> (ls == <span class="literal">NULL</span>) &#123;</span><br><span class="line">                <span class="keyword">return</span> NGX_CONF_ERROR;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            ls-&gt;addr_ntop = <span class="number">1</span>;</span><br><span class="line">            ls-&gt;handler = ngx_stream_init_connection;</span><br><span class="line">            ls-&gt;pool_size = <span class="number">256</span>;</span><br><span class="line">            ls-&gt;type = addr[i].opt.type;</span><br><span class="line"></span><br><span class="line">            cscf = addr-&gt;opt.ctx-&gt;srv_conf[ngx_stream_core_module.ctx_index];</span><br><span class="line"></span><br><span class="line">            ls-&gt;logp = cscf-&gt;error_log;</span><br><span class="line">            ls-&gt;<span class="built_in">log</span>.data = &amp;ls-&gt;addr_text;</span><br><span class="line">            ls-&gt;<span class="built_in">log</span>.handler = ngx_accept_log_error;</span><br><span class="line">            ls-&gt;backlog = addr[i].opt.backlog;</span><br><span class="line">            ls-&gt;rcvbuf = addr[i].opt.rcvbuf;</span><br><span class="line">            ls-&gt;sndbuf = addr[i].opt.sndbuf;</span><br><span class="line">            ls-&gt;wildcard = addr[i].opt.wildcard;</span><br><span class="line"></span><br><span class="line">            ls-&gt;keepalive = addr[i].opt.so_keepalive;</span><br><span class="line"><span class="meta">#<span class="keyword">if</span> (NGX_HAVE_KEEPALIVE_TUNABLE)</span></span><br><span class="line">            ls-&gt;keepidle = addr[i].opt.tcp_keepidle;</span><br><span class="line">            ls-&gt;keepintvl = addr[i].opt.tcp_keepintvl;</span><br><span class="line">            ls-&gt;keepcnt = addr[i].opt.tcp_keepcnt;</span><br><span class="line"><span class="meta">#<span class="keyword">endif</span></span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="keyword">if</span> (NGX_HAVE_INET6)</span></span><br><span class="line">            ls-&gt;ipv6only = addr[i].opt.ipv6only;</span><br><span class="line"><span class="meta">#<span class="keyword">endif</span></span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="keyword">if</span> (NGX_HAVE_REUSEPORT)</span></span><br><span class="line">            ls-&gt;reuseport = addr[i].opt.reuseport;</span><br><span class="line"><span class="meta">#<span class="keyword">endif</span></span></span><br><span class="line"></span><br><span class="line">            stport = ngx_palloc(cf-&gt;pool, <span class="keyword">sizeof</span>(<span class="type">ngx_stream_port_t</span>));</span><br><span class="line">            <span class="keyword">if</span> (stport == <span class="literal">NULL</span>) &#123;</span><br><span class="line">                <span class="keyword">return</span> NGX_CONF_ERROR;</span><br><span class="line">            &#125;</span><br><span class="line">            ls-&gt;servers = stport;</span><br><span class="line">            stport-&gt;naddrs = i + <span class="number">1</span>;</span><br><span class="line"></span><br><span class="line">            <span class="keyword">switch</span> (ls-&gt;sockaddr-&gt;sa_family) &#123;</span><br><span class="line"><span class="meta">#<span class="keyword">if</span> (NGX_HAVE_INET6)</span></span><br><span class="line">            <span class="keyword">case</span> AF_INET6:</span><br><span class="line">                <span class="keyword">if</span> (ngx_stream_add_addrs6(cf, stport, addr) != NGX_OK) &#123;</span><br><span class="line">                    <span class="keyword">return</span> NGX_CONF_ERROR;</span><br><span class="line">                &#125;</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line"><span class="meta">#<span class="keyword">endif</span></span></span><br><span class="line">            <span class="keyword">default</span>: <span class="comment">/* AF_INET */</span></span><br><span class="line">                <span class="keyword">if</span> (ngx_stream_add_addrs(cf, stport, addr) != NGX_OK) &#123;</span><br><span class="line">                    <span class="keyword">return</span> NGX_CONF_ERROR;</span><br><span class="line">                &#125;</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="keyword">if</span> (ngx_clone_listening(cf, ls) != NGX_OK) &#123;</span><br><span class="line">                <span class="keyword">return</span> NGX_CONF_ERROR;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            addr++;</span><br><span class="line">            last--;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> NGX_CONF_OK;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p><a target="_blank" rel="noopener" href="https://github.com/vislee/leevis.com/issues/139">本节摘自网络</a></p>
+<h2 id="NGX-STREAM-CONTENT-PHASE-阶段设置处理函数方法"><a href="#NGX-STREAM-CONTENT-PHASE-阶段设置处理函数方法" class="headerlink" title="NGX_STREAM_CONTENT_PHASE 阶段设置处理函数方法"></a>NGX_STREAM_CONTENT_PHASE 阶段设置处理函数方法</h2><p>参见 <code>ngx_stream_proxy_module</code> 模块的 <code>proxy_pass</code> 指令处理函数：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">static</span> <span class="type">char</span> *</span><br><span class="line"><span class="title function_">ngx_stream_proxy_pass</span><span class="params">(<span class="type">ngx_conf_t</span> *cf, <span class="type">ngx_command_t</span> *cmd, <span class="type">void</span> *conf)</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="type">ngx_stream_proxy_srv_conf_t</span> *pscf = conf;</span><br><span class="line"></span><br><span class="line">    <span class="type">ngx_url_t</span>                            u;</span><br><span class="line">    <span class="type">ngx_str_t</span>                           *value, *url;</span><br><span class="line">    <span class="type">ngx_stream_complex_value_t</span>           cv;</span><br><span class="line">    <span class="type">ngx_stream_core_srv_conf_t</span>          *cscf;</span><br><span class="line">    <span class="type">ngx_stream_compile_complex_value_t</span>   ccv;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (pscf-&gt;upstream || pscf-&gt;upstream_value) &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="string">&quot;is duplicate&quot;</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    cscf = ngx_stream_conf_get_module_srv_conf(cf, ngx_stream_core_module);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 处理函数设置</span></span><br><span class="line">    cscf-&gt;handler = ngx_stream_proxy_handler;</span><br><span class="line"></span><br><span class="line">    value = cf-&gt;args-&gt;elts;</span><br><span class="line"></span><br><span class="line">    url = &amp;value[<span class="number">1</span>];</span><br><span class="line"></span><br><span class="line">    ngx_memzero(&amp;ccv, <span class="keyword">sizeof</span>(<span class="type">ngx_stream_compile_complex_value_t</span>));</span><br><span class="line"></span><br><span class="line">    ccv.cf = cf;</span><br><span class="line">    ccv.value = url;</span><br><span class="line">    ccv.complex_value = &amp;cv;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (ngx_stream_compile_complex_value(&amp;ccv) != NGX_OK) &#123;</span><br><span class="line">        <span class="keyword">return</span> NGX_CONF_ERROR;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (cv.lengths) &#123;</span><br><span class="line">        pscf-&gt;upstream_value = ngx_palloc(cf-&gt;pool, <span class="keyword">sizeof</span>(<span class="type">ngx_stream_complex_value_t</span>));</span><br><span class="line">        <span class="keyword">if</span> (pscf-&gt;upstream_value == <span class="literal">NULL</span>) &#123;</span><br><span class="line">            <span class="keyword">return</span> NGX_CONF_ERROR;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        *pscf-&gt;upstream_value = cv;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> NGX_CONF_OK;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    ngx_memzero(&amp;u, <span class="keyword">sizeof</span>(<span class="type">ngx_url_t</span>));</span><br><span class="line"></span><br><span class="line">    u.url = *url;</span><br><span class="line">    u.no_resolve = <span class="number">1</span>;</span><br><span class="line"></span><br><span class="line">    pscf-&gt;upstream = ngx_stream_upstream_add(cf, &amp;u, <span class="number">0</span>);</span><br><span class="line">    <span class="keyword">if</span> (pscf-&gt;upstream == <span class="literal">NULL</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span> NGX_CONF_ERROR;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> NGX_CONF_OK;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+        </div>
+        
+
+    </article>
+    
+    <section id="comments">
+        
+    </section>
+
+
+    
+
+</main>
+
+
+<aside style="" id="sidebar" class="aside aside-fixture">
+    <div class="toc-sidebar">
+        <nav id="toc" class="article-toc">
+            <h3 class="toc-title">文章目录</h3>
+            <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#stream-%E6%A8%A1%E5%9D%97"><span class="toc-number">1.</span> <span class="toc-text">stream 模块</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%A4%84%E7%90%86%E9%98%B6%E6%AE%B5%E5%AE%9A%E4%B9%89"><span class="toc-number">2.</span> <span class="toc-text">处理阶段定义</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#ngx-stream-optimize-servers"><span class="toc-number">3.</span> <span class="toc-text">ngx_stream_optimize_servers</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#NGX-STREAM-CONTENT-PHASE-%E9%98%B6%E6%AE%B5%E8%AE%BE%E7%BD%AE%E5%A4%84%E7%90%86%E5%87%BD%E6%95%B0%E6%96%B9%E6%B3%95"><span class="toc-number">4.</span> <span class="toc-text">NGX_STREAM_CONTENT_PHASE 阶段设置处理函数方法</span></a></li></ol>
+        </nav>
+    </div>
+</aside>
+
+
+
+
+
+        </section>
+        <footer class="hidden lg:block fixed bottom-0 left-0 sm:w-1/12 lg:w-1/6 bg-gray-100 z-40">
+    
+    <div class="footer-social-links">
+        
+            <a target="_blank" rel="noopener" href="https://github.com/juzipeek">
+                <i class="iconfont icon-github"></i>
+            </a>
+        
+    </div>
+    
+    
+</footer>
+
+        <div id="mask" class="hidden mask fixed inset-0 bg-gray-900 opacity-75 z-40"></div>
+        <div id="search-view-container" class="hidden shadow-xl"></div>
+        
+<script src="/js/dom-event.min.js"></script>
+
+
+
+<script src="/js/local-search.min.js"></script>
+
+
+
+    <script src="//cdn.jsdelivr.net/npm/lightgallery.js@1.1.3/dist/js/lightgallery.min.js"></script>
+    
+<script src="/js/light-gallery.min.js"></script>
+
+
+
+
+
+
+    </body>
+</html>

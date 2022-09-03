@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html  lang="zh-CN" >
+    <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, minimum-scale=1, initial-scale=1, maximum-scale=5, viewport-fit=cover">
+    <title>Kong 代码阅读 | 自留地</title>
+    <meta name="description" content="一 基于源码安装1. 依赖安装Kong 依赖 OpenResty、 Nginx 补丁、 OpenResy 补丁、 OpenSSL、 PCRE、 LuaRocks、 LibYAML. 使用 kong-build-tools 工具可以方便安装依赖. 1234567891011121314151617181920git clone git@github.com:Kong&#x2F;kong-build-tools">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Kong 代码阅读">
+<meta property="og:url" content="https://juzipeek.github.io/2021/02/28/kong-code/index.html">
+<meta property="og:site_name" content="自留地">
+<meta property="og:description" content="一 基于源码安装1. 依赖安装Kong 依赖 OpenResty、 Nginx 补丁、 OpenResy 补丁、 OpenSSL、 PCRE、 LuaRocks、 LibYAML. 使用 kong-build-tools 工具可以方便安装依赖. 1234567891011121314151617181920git clone git@github.com:Kong&#x2F;kong-build-tools">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2021-02-27T16:00:00.000Z">
+<meta property="article:modified_time" content="2022-09-03T17:44:11.325Z">
+<meta property="article:author" content="zhou cheng jie">
+<meta property="article:tag" content="NGINX">
+<meta property="article:tag" content="OpenResty">
+<meta property="article:tag" content="Kong">
+<meta name="twitter:card" content="summary">
+
+    
+    <link rel="icon" href="/images/favicon.ico" type="image/x-icon">
+
+    
+<link rel="stylesheet" href="/css/common.min.css">
+
+
+
+    
+    
+    
+    
+        <link href="//cdn.jsdelivr.net/npm/lightgallery.js@1.1.3/dist/css/lightgallery.min.css" rel="stylesheet">
+    
+    
+    
+<link rel="stylesheet" href="/css/iconfont.min.css">
+
+    
+    <script>
+        (function(e,t,n,i,s,a,c){e[n]=e[n]||function(){(e[n].q=e[n].q||[]).push(arguments)}
+        ;a=t.createElement(i);c=t.getElementsByTagName(i)[0];a.async=true;a.src=s
+        ;c.parentNode.insertBefore(a,c)
+        })(window,document,"galite","script","https://cdn.jsdelivr.net/npm/ga-lite@2/dist/ga-lite.min.js");
+
+        galite('create', 'G-HFGFGEWD53', 'auto');
+        galite('send', 'pageview');
+    </script>
+    
+<meta name="generator" content="Hexo 5.4.2"></head>
+
+    <body>
+        <header class="header header-fixture">
+    <div class="profile-search-wrap flex sm:block">
+        
+        
+        <div class="profile sm:text-center md:px-1 lg:px-3 sm:pb-4 sm:pt-6">
+            <a id="avatar" role="link" href="https://github.com/juzipeek" class="inline-block lg:w-16 lg:h-16 w-8 h-8 m-2" target="_blank" rel="noopener" rel="noreferrer" >
+                <img src="/images/yellow.jpg" class="rounded-full" alt="avatar">
+            </a>
+            <h2 id="name" class="hidden lg:block">zhou cheng jie</h2>
+            <h3 id="title" class="hidden lg:block">coder</h3>
+            
+            <small id="location" class="hidden lg:block">
+                <i class="iconfont icon-map-icon"></i>
+                BeiJing, China
+            </small>
+            
+        </div>
+        
+        
+<div class="search flex-1 flex lg:inline-block sm:hidden lg:px-4 lg:mt-2 lg:mb-4 lg:w-full">
+    <form id="search-form" class="my-auto flex-1 lg:border lg:border-solid lg:border-gray-200">
+        <div class="input-group table bg-gray-100 lg:bg-white w-full">
+            <input id="search-input" type="text" placeholder="搜索" class="inline-block w-full bg-gray-100 lg:bg-white p-1">
+            <span class="table-cell">
+                <button name="search tigger button" disabled>
+                    <i class="iconfont icon-search m-2"></i>
+                </button>
+            </span>
+        </div>
+    </form>
+        
+<div id="content-json" data-placeholder="搜索" class="invisible hidden">/content.json</div>
+<script id="search-teamplate" type="text/html" data-path="/content.json">
+    <div>
+        <div class="search-header bg-gray-400">
+            <input id="actual-search-input" model="keyword" ref="input" class="inline-block w-full h-10 px-2 py-1" placeholder="搜索" type="text">
+        </div>
+        <div class="search-result bg-gray-200">
+            {{#each searchPosts}}
+            <a href="/{{ path }}" class="result-item block px-2 pb-3 mb-1 pt-1 hover:bg-indigo-100">
+                <i class="iconfont icon-file"></i>
+                <h1 class="result-title inline font-medium text-lg">{{ title }}</h1>
+                <p class="result-content text-gray-600 text-sm">{{{ text }}}</p>
+            </a>
+            {{/each}}
+        </div>
+    </div>
+</script>
+
+</div>
+
+
+        <button name="menu toogle button" id="menu-toggle-btn" class="block sm:hidden p-3" role="button" aria-expanded="false">
+            <i class="iconfont icon-hamburger"></i>
+        </button>
+    </div>
+    <nav id="menu-nav" class="hidden sm:flex flex-col">
+        
+        
+            <div class="menu-item menu-home" role="menuitem">
+                <a href="/.">
+                    <i class="iconfont icon-home" aria-hidden="true"></i>
+                    <span class="menu-title">首页</span>
+                </a>
+            </div>
+        
+        
+            <div class="menu-item menu-archives" role="menuitem">
+                <a href="/archives">
+                    <i class="iconfont icon-archive" aria-hidden="true"></i>
+                    <span class="menu-title">归档</span>
+                </a>
+            </div>
+        
+        
+            <div class="menu-item menu-categories" role="menuitem">
+                <a href="/categories">
+                    <i class="iconfont icon-folder" aria-hidden="true"></i>
+                    <span class="menu-title">分类</span>
+                </a>
+            </div>
+        
+        
+            <div class="menu-item menu-tags" role="menuitem">
+                <a href="/tags">
+                    <i class="iconfont icon-tag" aria-hidden="true"></i>
+                    <span class="menu-title">标签</span>
+                </a>
+            </div>
+        
+        
+            <div class="menu-item menu-about" role="menuitem">
+                <a href="/about">
+                    <i class="iconfont icon-cup" aria-hidden="true"></i>
+                    <span class="menu-title">关于</span>
+                </a>
+            </div>
+        
+        
+<div class="social-links flex sm:flex-col lg:hidden mt-5">
+    
+        <span class="social-item text-center">
+            <a target="_blank" rel="noopener" href="https://github.com/juzipeek">
+                <i class="iconfont social-icon icon-github"></i>
+                <span class="menu-title hidden lg:inline">menu.github</span>
+            </a>
+        </span>
+    
+</div>
+
+
+    </nav>
+</header>
+
+        <section class="main-section">
+            
+    <main class="flex-1 px-4 py-14 md:px-5 lg:px-8 lg:py-4 relative min-h-screen">
+    
+
+    <article class="content article article-archives article-type-list" itemscope="">
+        <header class="article-header">
+            
+    
+        <h1 class="article-title text-lg" itemprop="name">
+            Kong 代码阅读
+        </h1>
+    
+
+
+
+            <p class="article-meta mb-3 text-xs">
+                <span class="article-date">
+    <i class="iconfont icon-calendar-check"></i>
+	<a href="/2021/02/28/kong-code/" class="article-date">
+	  <time datetime="2021-02-27T16:00:00.000Z" itemprop="datePublished">2月 28</time>
+	</a>
+</span>
+
+                
+    <span class="article-category">
+    <i class="iconfont icon-folder"></i>
+    <a class="article-category-link" href="/categories/NGINX/">NGINX</a>
+  </span>
+
+
+                
+    <span class="article-tags">
+    <i class="iconfont icon-tag"></i>
+    <a class="article-tag-none-link" href="/tags/Kong/" rel="tag">Kong</a>, <a class="article-tag-none-link" href="/tags/NGINX/" rel="tag">NGINX</a>, <a class="article-tag-none-link" href="/tags/OpenResty/" rel="tag">OpenResty</a>
+  </span>
+
+
+                <span class="_partial/post-comment"><i class="icon icon-comment"></i>
+                    <a href="/2021/02/28/kong-code/#comments" class="article-comment-link">
+                        评论
+                    </a>
+                </span>
+                
+    
+        <span class="post-wordcount" itemprop="wordCount">字数统计: 5k(字)</span>
+    
+    
+        <span class="post-readcount" itemprop="timeRequired">阅读时长: 23(分)</span>
+    
+
+
+            </p>
+        </header>
+        <div class="marked-body article-body">
+            <h2 id="一-基于源码安装"><a href="#一-基于源码安装" class="headerlink" title="一 基于源码安装"></a>一 基于源码安装</h2><h3 id="1-依赖安装"><a href="#1-依赖安装" class="headerlink" title="1. 依赖安装"></a>1. 依赖安装</h3><p>Kong 依赖 OpenResty、 Nginx 补丁、 OpenResy 补丁、 OpenSSL、 PCRE、 LuaRocks、 LibYAML. 使用 <a target="_blank" rel="noopener" href="https://github.com/Kong/kong-build-tools">kong-build-tools</a> 工具可以方便安装依赖.</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">git <span class="built_in">clone</span> git@github.com:Kong/kong-build-tools.git</span><br><span class="line"><span class="built_in">cd</span> kong-build-tools</span><br><span class="line"></span><br><span class="line">./openresty-build-tools/kong-ngx-build \</span><br><span class="line">    --prefix <span class="variable">$&#123;HOME&#125;</span>/work/kong-deps \</span><br><span class="line">    --work <span class="variable">$&#123;HOME&#125;</span>/work/kong-work \</span><br><span class="line">    --openresty 1.17.8.2 \</span><br><span class="line">    --openssl 1.1.1i \</span><br><span class="line">    --kong-nginx-module 0.0.8 \</span><br><span class="line">    --pcre 8.44</span><br><span class="line"></span><br><span class="line"><span class="comment"># 设置 PATH</span></span><br><span class="line"><span class="built_in">export</span> KONG_DEPS_PATH=<span class="variable">$&#123;HOME&#125;</span>/work/kong-deps</span><br><span class="line"><span class="built_in">export</span> OPENSSL_DIR=<span class="variable">$&#123;KONG_DEPS_PATH&#125;</span>/openssl</span><br><span class="line"><span class="built_in">export</span> PATH=<span class="variable">$&#123;KONG_DEPS_PATH&#125;</span>/openresty/bin:<span class="variable">$PATH</span></span><br><span class="line"><span class="built_in">export</span> PATH=<span class="variable">$&#123;KONG_DEPS_PATH&#125;</span>/openresty/nginx/sbin:<span class="variable">$PATH</span></span><br><span class="line"><span class="built_in">export</span> PATH=<span class="variable">$&#123;KONG_DEPS_PATH&#125;</span>/openssl/bin:<span class="variable">$PATH</span></span><br><span class="line"><span class="built_in">export</span> PATH=<span class="variable">$&#123;KONG_DEPS_PATH&#125;</span>/luarocks/bin:<span class="variable">$PATH</span></span><br><span class="line"></span><br><span class="line"><span class="built_in">export</span> PATH=<span class="variable">$&#123;HOME&#125;</span>/work/luarocks/bin:<span class="variable">$PATH</span></span><br></pre></td></tr></table></figure>
+
+<p>选项解释:</p>
+<ul>
+<li><code>--prefix</code> : 程序安装目录</li>
+<li><code>--work</code> : 依赖文件(openresty、openssl)下载及编译目录</li>
+<li><code>--openresty</code> : 指定 OpenResty 版本</li>
+<li><code>--openssl</code> : 指定 OpenSSL 版本</li>
+<li><code>--kong-nginx-module</code> : 指定 lua-kong-nginx-module 版本, 主要是对 nginx、lua-nginx-module 补丁</li>
+<li><code>--pcre</code> : 指定 pcre 版本, 如果未指定, 则不添加 pcre 模块</li>
+<li><code>--force</code> : 删除 work、prefix 中内容, 重新下载编译</li>
+</ul>
+<p>测试安装是否成功:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">/usr/local/kong/openresty/bin/openresty -v</span><br><span class="line">openresty -v</span><br></pre></td></tr></table></figure>
+
+<p>安装 LibYAML 库:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Ubuntu:</span></span><br><span class="line">apt install libyaml-dev</span><br><span class="line"></span><br><span class="line"><span class="comment"># Fedora:</span></span><br><span class="line">dnf install libyaml-devel</span><br><span class="line"></span><br><span class="line"><span class="comment"># macOS:</span></span><br><span class="line">brew install libyaml --build-from-source</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>‘kong-build-tools’ 的核心是 ‘/openresty-build-tools/kong-ngx-build’ 脚本, 会依次下载 OpenSSL, OpenResty, PCRE, LuaRocks, lua-kong-nginx-module 并对 OpenResty, Nginx 打补丁. 最终会安装 OpenResty 和 LuaRocks.</p>
+</blockquote>
+<h3 id="2-Kong-安装"><a href="#2-Kong-安装" class="headerlink" title="2. Kong 安装"></a>2. Kong 安装</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">git <span class="built_in">clone</span> git@github.com:Kong/kong.git</span><br><span class="line"><span class="built_in">cd</span> kong</span><br><span class="line">git checkout 2.3.2</span><br><span class="line">make install</span><br><span class="line"></span><br><span class="line"><span class="built_in">cp</span> bin/kong bin/busted ~/bin/</span><br><span class="line"><span class="comment"># kong 指令拷贝到 bin 目录后不需要将 kong/bin 添加到 PATH 中</span></span><br><span class="line"><span class="built_in">cd</span> ..</span><br><span class="line"><span class="built_in">export</span> PATH=$(<span class="built_in">pwd</span>)/kong/bin:<span class="variable">$PATH</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 添加设置 Kong 安装目录到 lua 包搜索路径</span></span><br><span class="line"><span class="built_in">export</span> KONG_LUA_PATH_OVERRIDE=$(<span class="built_in">pwd</span>)/kong/</span><br><span class="line"></span><br><span class="line"><span class="comment"># 导出 luarocks 库变量到终端环境, 会导出 LUA_PATH, LUA_CPATH, PATH</span></span><br><span class="line"><span class="built_in">eval</span> $(luarocks path --bin)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 检查安装结果</span></span><br><span class="line">kong version --vv</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>如果不设置 KONG_LUA_PATH_OVERRIDE 环境变量, 需要进入 kong 安装目录执行 kong 命令.</p>
+</blockquote>
+<p>执行 <code>make install</code> 命令会通过 <code>luarocks</code> 安装 Kong.</p>
+<figure class="highlight makefile"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="section">install:</span></span><br><span class="line">	@luarocks make OPENSSL_DIR=<span class="variable">$(OPENSSL_DIR)</span> CRYPTO_DIR=<span class="variable">$(OPENSSL_DIR)</span></span><br></pre></td></tr></table></figure>
+
+<p><code>luarocks make</code> 会根据当前目录下 ‘kong-*.rockspec’ 文件进行 Kong 安装, 将 kong 文件拷贝到 luarocks 本地库.</p>
+<blockquote>
+<p>安装完成后, kong 代码会被安装到 ‘/usr/local/share/lua/5.1/kong’ 目录下, 可以修改此处代码进行调试. 通过可执行文件 ‘kong’, 输出 <code>package.path</code> 可以找点 OpenResty 库加载路径.</p>
+</blockquote>
+<h2 id="二-配置管理"><a href="#二-配置管理" class="headerlink" title="二 配置管理"></a>二 配置管理</h2><h3 id="1-Kong-配置"><a href="#1-Kong-配置" class="headerlink" title="1. Kong 配置"></a>1. Kong 配置</h3><p>使用 PostgreSQL 作为配置数据库, 安装 PostgreSQL</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">sudo apt-get update</span><br><span class="line">sudo apt install postgresql-12</span><br><span class="line"></span><br><span class="line"><span class="comment"># 开启</span></span><br><span class="line">sudo /etc/init.d/postgresql start</span><br><span class="line"><span class="comment"># 关闭</span></span><br><span class="line">sudo /etc/init.d/postgresql stop</span><br><span class="line"><span class="comment"># 重启</span></span><br><span class="line">sudo /etc/init.d/postgresql restart</span><br><span class="line"></span><br><span class="line">sudo -i -u postgres</span><br><span class="line"><span class="comment"># 进入 postgre 数据库</span></span><br><span class="line">psql</span><br><span class="line"></span><br><span class="line"><span class="comment"># 创建 kong 用户与数据库</span></span><br><span class="line">CREATE USER kong;</span><br><span class="line">CREATE DATABASE kong OWNER kong;</span><br><span class="line">ALTER USER kong WITH PASSWORD <span class="string">&#x27;kong&#x27;</span>;</span><br><span class="line"><span class="comment"># 修改 postgresql.conf pg_hba.conf 允许远程访问</span></span><br></pre></td></tr></table></figure>
+
+<p>Kong 启动时需要根据配置文件生成 NGINX 配置文件, 默认会尝试读取 ‘/etc/kong/kong.conf’, ‘/etc/kong.conf’ 作为启动配置文件. 在启动时可以通过 <code>--conf file_path</code> 指定配置文件.</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">sudo <span class="built_in">mkdir</span> -p /etc/kong/</span><br><span class="line"><span class="comment"># 注意修改 postgre 数据库密码</span></span><br><span class="line"><span class="built_in">cp</span> kong.conf.default /etc/kong/kong.conf</span><br><span class="line"></span><br><span class="line"><span class="comment"># 检查配置是否有问题</span></span><br><span class="line">kong check</span><br><span class="line"></span><br><span class="line"><span class="comment"># 生成 nginx 配置</span></span><br><span class="line">kong prepare</span><br><span class="line"></span><br><span class="line"><span class="comment"># 初始化数据库</span></span><br><span class="line">kong migrations bootstrap</span><br><span class="line"></span><br><span class="line"><span class="comment"># 启动</span></span><br><span class="line">kong start</span><br></pre></td></tr></table></figure>
+
+<h3 id="2-Kong-默认监听端口"><a href="#2-Kong-默认监听端口" class="headerlink" title="2. Kong 默认监听端口"></a>2. Kong 默认监听端口</h3><p>默认情况下, Kong 监听以下端口进行转发、管理</p>
+<table>
+<thead>
+<tr>
+<th align="center">端口</th>
+<th align="center">功能</th>
+<th align="center">配置名</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center">8000</td>
+<td align="center">反向代理端口</td>
+<td align="center">proxy_listen</td>
+</tr>
+<tr>
+<td align="center">8001</td>
+<td align="center">管理端口, http</td>
+<td align="center">admin_listen</td>
+</tr>
+<tr>
+<td align="center">8444</td>
+<td align="center">管理端口, https</td>
+<td align="center">admin_listen</td>
+</tr>
+<tr>
+<td align="center"></td>
+<td align="center"></td>
+<td align="center"></td>
+</tr>
+</tbody></table>
+<h3 id="3-常用-API"><a href="#3-常用-API" class="headerlink" title="3. 常用 API"></a>3. 常用 API</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 节点信息</span></span><br><span class="line">curl -i <span class="string">&quot;http://localhost:8001/&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 查看状态</span></span><br><span class="line">curl -i <span class="string">&quot;http://localhost:8001/status&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 查看工作区</span></span><br><span class="line">curl -i <span class="string">&quot;http://localhost:8001/workspaces&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 列出 service</span></span><br><span class="line">curl -i <span class="string">&quot;http://localhost:8001/services&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 创建 service</span></span><br><span class="line">curl -i \</span><br><span class="line">-H <span class="string">&quot;content-type: application/json&quot;</span> \</span><br><span class="line"><span class="string">&quot;http://localhost:8001/services&quot;</span> \</span><br><span class="line">-d <span class="string">&#x27;&#123;</span></span><br><span class="line"><span class="string">    &quot;name&quot;: &quot;my-service&quot;,</span></span><br><span class="line"><span class="string">    &quot;retries&quot;: 5,</span></span><br><span class="line"><span class="string">    &quot;protocol&quot;: &quot;http&quot;,</span></span><br><span class="line"><span class="string">    &quot;host&quot;: &quot;example.com&quot;,</span></span><br><span class="line"><span class="string">    &quot;port&quot;: 80,</span></span><br><span class="line"><span class="string">    &quot;path&quot;: &quot;/some_api&quot;,</span></span><br><span class="line"><span class="string">    &quot;connect_timeout&quot;: 60000,</span></span><br><span class="line"><span class="string">    &quot;write_timeout&quot;: 60000,</span></span><br><span class="line"><span class="string">    &quot;read_timeout&quot;: 60000,</span></span><br><span class="line"><span class="string">    &quot;tags&quot;: [&quot;user-level&quot;, &quot;low-priority&quot;]</span></span><br><span class="line"><span class="string">&#125;&#x27;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 列出 route</span></span><br><span class="line">curl -i <span class="string">&quot;http://localhost:8001/routes&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 使用之前创建的 service 创建 route</span></span><br><span class="line">curl -i \</span><br><span class="line">-H <span class="string">&quot;content-type: application/json&quot;</span> \</span><br><span class="line"><span class="string">&quot;http://localhost:8001/routes&quot;</span> \</span><br><span class="line">-d <span class="string">&#x27;&#123;</span></span><br><span class="line"><span class="string">    &quot;name&quot;: &quot;my-route&quot;,</span></span><br><span class="line"><span class="string">    &quot;protocols&quot;: [&quot;http&quot;, &quot;https&quot;],</span></span><br><span class="line"><span class="string">    &quot;methods&quot;: [&quot;GET&quot;, &quot;POST&quot;],</span></span><br><span class="line"><span class="string">    &quot;hosts&quot;: [&quot;example.com&quot;, &quot;foo.test&quot;],</span></span><br><span class="line"><span class="string">    &quot;paths&quot;: [&quot;/foo&quot;, &quot;/bar&quot;],</span></span><br><span class="line"><span class="string">    &quot;https_redirect_status_code&quot;: 426,</span></span><br><span class="line"><span class="string">    &quot;strip_path&quot;: true,</span></span><br><span class="line"><span class="string">    &quot;path_handling&quot;: &quot;v0&quot;,</span></span><br><span class="line"><span class="string">    &quot;preserve_host&quot;: true,</span></span><br><span class="line"><span class="string">    &quot;request_buffering&quot;: true,</span></span><br><span class="line"><span class="string">    &quot;response_buffering&quot;: true,</span></span><br><span class="line"><span class="string">    &quot;tags&quot;: [&quot;user-level&quot;, &quot;low-priority&quot;],</span></span><br><span class="line"><span class="string">    &quot;service&quot;: &#123;&quot;id&quot;:&quot;afa80698-f510-4f28-b12e-642cb447f91c&quot;&#125;</span></span><br><span class="line"><span class="string">&#125;&#x27;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 列出插件配置</span></span><br><span class="line">curl -i <span class="string">&quot;http://localhost:8001/plugins&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 创建插件配置</span></span><br><span class="line">curl -i \</span><br><span class="line">-H <span class="string">&quot;content-type: application/json&quot;</span> \</span><br><span class="line"><span class="string">&quot;http://localhost:8001/plugins&quot;</span> \</span><br><span class="line">-d <span class="string">&#x27;&#123;</span></span><br><span class="line"><span class="string">    &quot;name&quot;: &quot;rate-limiting&quot;,</span></span><br><span class="line"><span class="string">    &quot;config&quot;: &#123; &quot;hour&quot;: 500 &#125;</span></span><br><span class="line"><span class="string">&#125;&#x27;</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+
+
+<h2 id="三-数据层面代码"><a href="#三-数据层面代码" class="headerlink" title="三 数据层面代码"></a>三 数据层面代码</h2><p>在执行完 ‘kong migration bootstrap’ 后, 会生成 ‘nginx-kong.conf’ 文件(根据 ‘kong.conf’ 配置生成), 通过 ‘nginx-kong.conf’ 文件可以看到 kong 介入的处理阶段.</p>
+<p>下面介绍各个阶段执行流程.</p>
+<h3 id="1-库加载"><a href="#1-库加载" class="headerlink" title="1. 库加载"></a>1. 库加载</h3><p>在导入 kong 模块时会调用 ‘kong.globalpatches’ 对 <code>ngx.socket.tcp</code>, <code>ngx.socket.udp</code> 进行 hook, 目的时在进行连接时调用 <code>resty.dns.client</code> 进行地址解析.</p>
+<blockquote>
+<p>lua-resty-dns-client 是独立的库.</p>
+</blockquote>
+<h3 id="2-init"><a href="#2-init" class="headerlink" title="2. init"></a>2. init</h3><ul>
+<li><p>‘.kong_env’ 配置文件加载, 作为全局配置数据</p>
+</li>
+<li><p>重置共享内存内容</p>
+</li>
+<li><p>根据 Kong 版本加载相应的 PDK 加载, 插件加载后可以直接通过全局 ‘kong’ 实例访问插件代码</p>
+</li>
+<li><p>数据库初始化:<br>初始化数据库实体模型(schema): Connector 和 Strategy. 在 init、init_worker 阶段可以使用 <code>luasocket</code> 进行同步网络操作, 建立与数据库连接进行查询.</p>
+</li>
+<li><p>初始化 dns_client</p>
+</li>
+<li><p>如果转发端口开启 HTTPS, 加载转发使用的 SSL 证书、秘钥</p>
+</li>
+<li><p>加载集群数据层面、控制层面 SSL 证书、秘钥</p>
+</li>
+<li><p>加载插件数据库实体模型(schema)<br>是通过 DB.__index 元方法加载 DAO 中的 ‘plugins’.</p>
+</li>
+<li><p>构建插件迭代器:<br>插件配置的 ‘combos’ 数组, 通过 ‘combos’ 可以实现插件配置优先级. Route、Service、Consumer 相互组合后优先级. 在一次请求中, 最多运行插件一次, 但是插件使用的配置可以有多种选择. 选择使用 Service、Route、Consumer 的配置是有优先级顺序的.<br>插件可以介入多个处理阶段(init_worker/access…), 在插件迭代器构建阶段, 会将插件的处理函数插入 workspace 中阶段表中.</p>
+</li>
+<li><p>路由初始化<br>构建路由匹配表, 路由匹配优先级: 完整域名 &gt; 正则域名 &gt; 请求头特征多 &gt; 请求头特征少 &gt; 正则优先级高 &gt; 正则优先级低 &gt; URI 路径长 &gt; URI 路径短 &gt; 创建时间晚 &gt; 创建时间早.</p>
+<p>详见<code>四 数据层面代码 - 路由初始化</code>.</p>
+<h3 id="3-init-worker"><a href="#3-init-worker" class="headerlink" title="3. init_worker"></a>3. init_worker</h3></li>
+<li><p>数据库、缓存初始化</p>
+</li>
+<li><p>创建统计信息上报定时器, 定时向 kong-hf.konghq.com 发送报告, 将统计信息上报</p>
+</li>
+<li><p>检查插件是否更新, 构建插件迭代器(plugins_iterator)</p>
+</li>
+<li><p>插件初始化</p>
+</li>
+</ul>
+<h3 id="4-ssl-certificate"><a href="#4-ssl-certificate" class="headerlink" title="4. ssl_certificate"></a>4. ssl_certificate</h3><ul>
+<li>根据 SNI(非请求头 host)查找对应的证书、私钥, 并更新到请求信息中</li>
+<li>执行插件</li>
+</ul>
+<h3 id="5-rewrite"><a href="#5-rewrite" class="headerlink" title="5. rewrite"></a>5. rewrite</h3><ul>
+<li>执行插件</li>
+</ul>
+<h3 id="6-access"><a href="#6-access" class="headerlink" title="6. access"></a>6. access</h3><ul>
+<li>路由匹配, 未匹配返回 404</li>
+<li>balancer 预处理: 初始化 balancer_data, 设置默认超时时间、重试次数; service 证书、秘钥处理</li>
+<li>websocket 升级处理、XFF 头处理</li>
+<li>如果 service 使用 grpc 协议, 跳转到 grpc location 处理</li>
+<li>根据路由是否启用请求体、响应体缓存, 跳转到相应 location 处理</li>
+<li>执行插件</li>
+<li>balancer 执行:<br>将数据库 upstream 表中所有 upstream 加载到进程内(在 init 阶段可能已经加载到进程内).<br>根据路由匹配的 service 名, 从 upstream 字典中查找 upstream.<br>根据 upstream.id 从缓存获取或创建 balancer 对象, 支持: 一致哈希(resty.dns.balancer.consistent_hashing)、最小连接(resty.dns.balancer.least_connections)、轮询(resty.dns.balancer.ring)三种负载均衡器. 从缓存或数据中获取 upstream 的负载实例(target), 并添加到负载均衡器中. 创建相应的健康检查对象, 并缓存负载均衡对象. 尝试使用 balancer 对象查找负载实例, 失败则直接响应 503.<br>如果未查找到 balancer 对象, 使用 dns 解析(resty.dns.client)域名获得 IP、Port.<br>保存获取到的 IP、Port 转发使用.</li>
+</ul>
+<h3 id="7-balancer"><a href="#7-balancer" class="headerlink" title="7. balancer"></a>7. balancer</h3><ul>
+<li>通过 balancer 对象获取负载实例, 设置后端实例 IP、Port. 如果是重试进入 balancer 阶段, 上报上个实例的健康状态</li>
+<li>设置实例超时时间</li>
+<li>设置 keepalive (kong 修改了 lua-nginx-module, 可以通过 lua 代码控制开启长连接)</li>
+</ul>
+<h3 id="8-header-filter"><a href="#8-header-filter" class="headerlink" title="8. header filter"></a>8. header filter</h3><ul>
+<li>websocket upgrade 处理, 请求头过滤</li>
+<li>执行插件</li>
+</ul>
+<h3 id="9-body-filter"><a href="#9-body-filter" class="headerlink" title="9. body filter"></a>9. body filter</h3><ul>
+<li>  执行插件</li>
+</ul>
+<h3 id="10-log"><a href="#10-log" class="headerlink" title="10. log"></a>10. log</h3><ul>
+<li>执行插件</li>
+<li>balancer 健康检查上报</li>
+</ul>
+<h2 id="四-数据层面代码-路由初始化"><a href="#四-数据层面代码-路由初始化" class="headerlink" title="四 数据层面代码 - 路由初始化"></a>四 数据层面代码 - 路由初始化</h2><p>在 ‘init’ 阶段会进行路由初始化, 构建路由匹配表.</p>
+<h3 id="1-优先级"><a href="#1-优先级" class="headerlink" title="1. 优先级"></a>1. 优先级</h3><p>路由匹配优先级: 完整域名 &gt; 正则域名 &gt; 请求头特征多 &gt; 请求头特征少 &gt; 正则优先级高 &gt; 正则优先级低 &gt; URI 路径长 &gt; URI 路径短 &gt; 创建时间晚 &gt; 创建时间早.</p>
+<h3 id="2-路由分类"><a href="#2-路由分类" class="headerlink" title="2. 路由分类"></a>2. 路由分类</h3><p>累加路由启用的匹配类别得到路由匹配类别(categories), 依次路由匹配特征以特征值为键, 路由为值保存到匹配表中. 在路由分类处理中, 使用路由的 ‘match_weight’ 作为类别的 ‘match_weight’, 因为路由已经根据优先级进行排序, 类别的 ‘match_weight’ 是本类别中所有路由最大的 ‘match_weight’. 路由类别(categories)会根据优先级从高到低进行排序, <strong>在路由匹配过程中会尝试从高优先级开启匹配, 直至匹配成功</strong>.</p>
+<h3 id="3-路由匹配"><a href="#3-路由匹配" class="headerlink" title="3. 路由匹配"></a>3. 路由匹配</h3><p>路由匹配逻辑复杂, 会先根据请求特征(方法、URI、域名、源地址/端口、目的地址/端口、SNI)从缓存中获取历史匹配结果. 缓存获取失败, 会根据请求头、域名、URI、方法、源/目的地址、SNI单独匹配, 记录适用匹配类别和命中的特征(每各类别仅命中一次). 在构建匹配索引(‘plain_indexes’, ‘prefix_uris’, ‘regex_uris’…)时已经根据路由优先级排好序, 高优先级在前.<br>使用上一步的处理结果, 遍历比命中的匹配类别低的所有类别; 对于每个类别, 取类别中 routes_by_hosts/routes_by_headers… 中最小数量的路由数组(使用最小集合进行匹配, 提高效率; 最小集合匹配失败后会遍历所有路由进行匹配). 对于集合(最小集合/全部路由集合)中的每个路由, 使用<strong>匹配的请求特征</strong>进行匹配, 路由必须满着所有<strong>匹配的请求特征</strong>. 代码:</p>
+<figure class="highlight lua"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">--- ctx 中保存有匹配的请求特征值</span></span><br><span class="line">match_route = <span class="function"><span class="keyword">function</span><span class="params">(route_t, ctx)</span></span></span><br><span class="line">    <span class="comment">-- run cached matcher</span></span><br><span class="line">    <span class="keyword">if</span> <span class="built_in">type</span>(matchers[route_t.match_rules]) == <span class="string">&quot;function&quot;</span> <span class="keyword">then</span></span><br><span class="line">        clear_tab(ctx.matches)</span><br><span class="line">        <span class="keyword">return</span> matchers[route_t.match_rules](route_t, ctx)</span><br><span class="line">    <span class="keyword">end</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">-- build and cache matcher</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">local</span> matchers_set = &#123;&#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> _, bit_match_rule <span class="keyword">in</span> <span class="built_in">pairs</span>(MATCH_RULES) <span class="keyword">do</span></span><br><span class="line">        <span class="comment">--- 遍历特征 匹配</span></span><br><span class="line">        <span class="keyword">if</span> band(route_t.match_rules, bit_match_rule) ~= <span class="number">0</span> <span class="keyword">then</span></span><br><span class="line">            matchers_set[#matchers_set + <span class="number">1</span>] = matchers[bit_match_rule]</span><br><span class="line">        <span class="keyword">end</span></span><br><span class="line">    <span class="keyword">end</span></span><br><span class="line"></span><br><span class="line">    matchers[route_t.match_rules] = <span class="function"><span class="keyword">function</span><span class="params">(route_t, ctx)</span></span></span><br><span class="line">        <span class="comment">-- clear matches context for this try on this route</span></span><br><span class="line">        clear_tab(ctx.matches)</span><br><span class="line"></span><br><span class="line">        <span class="comment">-- 路由 route_t 必须满足匹配的所有特征</span></span><br><span class="line">        <span class="keyword">for</span> i = <span class="number">1</span>, #matchers_set <span class="keyword">do</span></span><br><span class="line">            <span class="keyword">if</span> <span class="keyword">not</span> matchers_set[i](route_t, ctx) <span class="keyword">then</span></span><br><span class="line">                <span class="keyword">return</span></span><br><span class="line">            <span class="keyword">end</span></span><br><span class="line">        <span class="keyword">end</span></span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> <span class="literal">true</span></span><br><span class="line">    <span class="keyword">end</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> matchers[route_t.match_rules](route_t, ctx)</span><br><span class="line"><span class="keyword">end</span></span><br></pre></td></tr></table></figure>
+
+<p>路由构建, 路由分类函数 ‘categorize_route_t’ 代码片段:</p>
+<figure class="highlight lua"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">... <span class="comment">-- init, omit</span></span><br><span class="line"><span class="built_in">insert</span>(category.all, route_t)</span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> _, host_t <span class="keyword">in</span> <span class="built_in">ipairs</span>(route_t.hosts) <span class="keyword">do</span></span><br><span class="line">    <span class="keyword">if</span> <span class="keyword">not</span> category.routes_by_hosts[host_t.value] <span class="keyword">then</span></span><br><span class="line">        category.routes_by_hosts[host_t.value] = &#123;&#125;</span><br><span class="line">    <span class="keyword">end</span></span><br><span class="line"></span><br><span class="line">    <span class="built_in">insert</span>(category.routes_by_hosts[host_t.value], route_t)</span><br><span class="line"><span class="keyword">end</span></span><br><span class="line"></span><br><span class="line"><span class="comment">--- omit code,</span></span><br><span class="line"><span class="comment">---  category.routes_by_headers</span></span><br><span class="line"><span class="comment">---  category.routes_by_uris</span></span><br><span class="line"><span class="comment">---  category.routes_by_methods</span></span><br><span class="line"><span class="comment">---  category.routes_by_sources</span></span><br><span class="line"><span class="comment">---  category.routes_by_destinations</span></span><br><span class="line"><span class="comment">---  category.routes_by_sni</span></span><br></pre></td></tr></table></figure>
+
+<p>分类后 ‘categories’ 结构示意:</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;category_bit, 类别二进制位&quot;</span> <span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">        <span class="attr">&quot;match_weight&quot;</span><span class="punctuation">:</span> <span class="string">&quot;同类别中, 最高优先级路由的匹配权重&quot;</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;all&quot;</span> <span class="punctuation">:</span> <span class="punctuation">[</span> <span class="string">&quot;route-1 对象&quot;</span><span class="punctuation">,</span> <span class="string">&quot;route-2 对象&quot;</span> <span class="punctuation">]</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;routes_by_hosts&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">            <span class="attr">&quot;host-a&quot;</span> <span class="punctuation">:</span> <span class="punctuation">[</span><span class="string">&quot;route-1 对象&quot;</span><span class="punctuation">,</span> <span class="string">&quot;route 对象&quot;</span><span class="punctuation">]</span><span class="punctuation">,</span></span><br><span class="line">            <span class="attr">&quot;host-b&quot;</span> <span class="punctuation">:</span> <span class="punctuation">[</span><span class="string">&quot;route-1 对象&quot;</span><span class="punctuation">]</span></span><br><span class="line">        <span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;routes_by_headers&quot;</span> <span class="punctuation">:</span> <span class="punctuation">&#123;</span> <span class="attr">&quot;header&quot;</span> <span class="punctuation">:</span> <span class="punctuation">[</span><span class="string">&quot;route 对象&quot;</span><span class="punctuation">]</span> <span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;routes_by_uris&quot;</span> <span class="punctuation">:</span> <span class="punctuation">&#123;</span> <span class="attr">&quot;uri&quot;</span> <span class="punctuation">:</span> <span class="punctuation">[</span><span class="string">&quot;route 对象&quot;</span><span class="punctuation">]</span> <span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;routes_by_methods&quot;</span> <span class="punctuation">:</span> <span class="punctuation">&#123;</span> <span class="attr">&quot;method&quot;</span> <span class="punctuation">:</span> <span class="punctuation">[</span><span class="string">&quot;route 对象&quot;</span><span class="punctuation">]</span> <span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;routes_by_sources&quot;</span> <span class="punctuation">:</span> <span class="punctuation">&#123;</span> <span class="attr">&quot;source&quot;</span> <span class="punctuation">:</span> <span class="punctuation">[</span><span class="string">&quot;route 对象&quot;</span><span class="punctuation">]</span> <span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;routes_by_destinations&quot;</span> <span class="punctuation">:</span> <span class="punctuation">&#123;</span> <span class="attr">&quot;dest&quot;</span> <span class="punctuation">:</span> <span class="punctuation">[</span><span class="string">&quot;route 对象&quot;</span><span class="punctuation">]</span> <span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;routes_by_sni&quot;</span> <span class="punctuation">:</span> <span class="punctuation">&#123;</span> <span class="attr">&quot;sni&quot;</span> <span class="punctuation">:</span> <span class="punctuation">[</span><span class="string">&quot;route 对象&quot;</span><span class="punctuation">]</span> <span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="punctuation">&#125;</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+
+<p>地址/端口:</p>
+<blockquote>
+<p>目的地址、端口其实是 Nginx 接收请求时 Server 端的地址、端口.<br>地址端口匹配用于 Stream 模式.</p>
+</blockquote>
+<p>路由匹配实现函数 ‘find_route’ 代码片段:</p>
+<figure class="highlight lua"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- header match</span></span><br><span class="line"><span class="keyword">for</span> _, header_name <span class="keyword">in</span> <span class="built_in">ipairs</span>(plain_indexes.headers) <span class="keyword">do</span></span><br><span class="line">    <span class="keyword">if</span> req_headers[header_name] <span class="keyword">then</span></span><br><span class="line">        req_category = bor(req_category, MATCH_RULES.HEADER)</span><br><span class="line">        hits.header_name = header_name</span><br><span class="line">        <span class="keyword">break</span>   // 匹配后结束 header 类别匹配</span><br><span class="line">    <span class="keyword">end</span></span><br><span class="line"><span class="keyword">end</span></span><br><span class="line"></span><br><span class="line"><span class="comment">-- host match</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> plain_indexes.hosts[host_with_port] <span class="keyword">or</span> plain_indexes.hosts[host_no_port] <span class="keyword">then</span></span><br><span class="line">    req_category = bor(req_category, MATCH_RULES.HOST)</span><br><span class="line"><span class="keyword">elseif</span> ctx.req_host <span class="keyword">then</span></span><br><span class="line">    <span class="keyword">for</span> i = <span class="number">1</span>, #wildcard_hosts <span class="keyword">do</span></span><br><span class="line">        <span class="keyword">local</span> from, _, err = re_find(host_with_port, wildcard_hosts[i].regex, <span class="string">&quot;ajo&quot;</span>)</span><br><span class="line">        ... <span class="comment">-- omit</span></span><br><span class="line">        <span class="keyword">if</span> from <span class="keyword">then</span></span><br><span class="line">            hits.host = wildcard_hosts[i].value</span><br><span class="line">            req_category = bor(req_category, MATCH_RULES.HOST)</span><br><span class="line">            <span class="keyword">break</span></span><br><span class="line">        <span class="keyword">end</span></span><br><span class="line">    <span class="keyword">end</span></span><br><span class="line"><span class="keyword">end</span></span><br><span class="line"></span><br><span class="line"><span class="comment">-- uri match</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> i = <span class="number">1</span>, #regex_uris <span class="keyword">do</span></span><br><span class="line">    <span class="keyword">local</span> from, _, err = re_find(req_uri, regex_uris[i].regex, <span class="string">&quot;ajo&quot;</span>)</span><br><span class="line"></span><br><span class="line">    ... <span class="comment">-- omit</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> from <span class="keyword">then</span></span><br><span class="line">        hits.uri = regex_uris[i].value</span><br><span class="line">        req_category = bor(req_category, MATCH_RULES.URI)</span><br><span class="line">        <span class="keyword">break</span></span><br><span class="line">    <span class="keyword">end</span></span><br><span class="line"><span class="keyword">end</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> <span class="keyword">not</span> hits.uri <span class="keyword">then</span></span><br><span class="line">    <span class="keyword">if</span> plain_indexes.uris[req_uri] <span class="keyword">then</span></span><br><span class="line">        hits.uri = req_uri</span><br><span class="line">        req_category = bor(req_category, MATCH_RULES.URI)</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">        <span class="keyword">for</span> i = <span class="number">1</span>, #prefix_uris <span class="keyword">do</span></span><br><span class="line">            <span class="keyword">if</span> <span class="built_in">find</span>(req_uri, prefix_uris[i].value, <span class="literal">nil</span>, <span class="literal">true</span>) == <span class="number">1</span> <span class="keyword">then</span></span><br><span class="line">                hits.uri = prefix_uris[i].value</span><br><span class="line">                req_category = bor(req_category, MATCH_RULES.URI)</span><br><span class="line">                <span class="keyword">break</span></span><br><span class="line">            <span class="keyword">end</span></span><br><span class="line">        <span class="keyword">end</span></span><br><span class="line">    <span class="keyword">end</span></span><br><span class="line"><span class="keyword">end</span></span><br><span class="line"></span><br><span class="line"><span class="comment">-- method match</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> plain_indexes.methods[req_method] <span class="keyword">then</span></span><br><span class="line">    req_category = bor(req_category, MATCH_RULES.METHOD)</span><br><span class="line"><span class="keyword">end</span></span><br><span class="line"></span><br><span class="line"><span class="comment">-- src match</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> plain_indexes.sources[ctx.src_ip] <span class="keyword">then</span></span><br><span class="line">    req_category = bor(req_category, MATCH_RULES.SRC)</span><br><span class="line"><span class="keyword">elseif</span> plain_indexes.sources[ctx.src_port] <span class="keyword">then</span></span><br><span class="line">    req_category = bor(req_category, MATCH_RULES.SRC)</span><br><span class="line"><span class="keyword">else</span></span><br><span class="line">    <span class="keyword">for</span> i = <span class="number">1</span>, #src_trust_funcs <span class="keyword">do</span></span><br><span class="line">        <span class="keyword">if</span> src_trust_funcs[i](ctx.src_ip) <span class="keyword">then</span></span><br><span class="line">            req_category = bor(req_category, MATCH_RULES.SRC)</span><br><span class="line">            <span class="keyword">break</span></span><br><span class="line">        <span class="keyword">end</span></span><br><span class="line">    <span class="keyword">end</span></span><br><span class="line"><span class="keyword">end</span></span><br><span class="line"></span><br><span class="line"><span class="comment">-- dst match</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> plain_indexes.destinations[ctx.dst_ip] <span class="keyword">then</span></span><br><span class="line">    req_category = bor(req_category, MATCH_RULES.DST)</span><br><span class="line"><span class="keyword">elseif</span> plain_indexes.destinations[ctx.dst_port] <span class="keyword">then</span></span><br><span class="line">    req_category = bor(req_category, MATCH_RULES.DST)</span><br><span class="line"><span class="keyword">else</span></span><br><span class="line">    <span class="keyword">for</span> i = <span class="number">1</span>, #dst_trust_funcs <span class="keyword">do</span></span><br><span class="line">        <span class="keyword">if</span> dst_trust_funcs[i](ctx.dst_ip) <span class="keyword">then</span></span><br><span class="line">            req_category = bor(req_category, MATCH_RULES.DST)</span><br><span class="line">            <span class="keyword">break</span></span><br><span class="line">        <span class="keyword">end</span></span><br><span class="line">    <span class="keyword">end</span></span><br><span class="line"><span class="keyword">end</span></span><br><span class="line"></span><br><span class="line"><span class="comment">-- sni match</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> plain_indexes.snis[ctx.sni] <span class="keyword">then</span></span><br><span class="line">    req_category = bor(req_category, MATCH_RULES.SNI)</span><br><span class="line"><span class="keyword">end</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="五-数据层面代码-事件触发与管理API"><a href="#五-数据层面代码-事件触发与管理API" class="headerlink" title="五 数据层面代码 - 事件触发与管理API"></a>五 数据层面代码 - 事件触发与管理API</h2><h3 id="1-事件"><a href="#1-事件" class="headerlink" title="1. 事件"></a>1. 事件</h3><p>在 <code>init_worker</code> 阶段 <code>runloop</code> 执行 <code>register_events</code> 函数, 注册 routes/services/plugins/upstreams/targes 的 ‘crud’ 事件处理回调. 对于 routes/service/plugins 会使当前版本无效, 触发重建对象. 对于 upstreams 变动会发布 balancer 事件.</p>
+<p>在 <code>init_worker</code> 阶段 <code>runloop.balancer</code> 模块执行初始化动作: 从数据库查询 upstream, 创建 balancer, 并创建定时器检查 upstream 是否有更新, 更新后查询所有的 upstream 更新到 ‘kong.core_cache’(共享内存) 中.</p>
+<h3 id="2-管理-API"><a href="#2-管理-API" class="headerlink" title="2. 管理 API"></a>2. 管理 API</h3><blockquote>
+<p>  管理端会调用节点 API 接口, 触发事件处理.</p>
+</blockquote>
+<p>Kong 使用 Lapis 框架提供管理 API, 所有的管理 API 位于 ‘kong.api’ 包下. ‘admin_content’ 函数使 API 入口, 在 ‘serve_content’ 中会调用 <code>lapis.serve(&#39;kong.api&#39;)</code> 使用 ‘kong.api’ 中所有路由进行管理.</p>
+<blockquote>
+<p>  读下 lapis 框架 serve 函数可以发现 serve 使用 require 加载模块, 并建立路由匹配对象进行请求处理.</p>
+</blockquote>
+<p>service/route/upstream 管理 API 是通过 ‘kong.api.endpoints’ 模块中  ‘generate_collection_endpoints’ 函数创建, 在 ‘kong.api’ 加载时会调用. POST 调用接口时将数据保存到数据库中, 会调用 DAO 对象的 ‘insert’ 方法调用 <code>post_crud_event</code> 发布 ‘worker-events’ 事件, 触发在 <code>runloop.init_worker</code> 中注册的回调函数进行更新操作.</p>
+<figure class="highlight lua"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- 生成通用 API 函数</span></span><br><span class="line"><span class="keyword">local</span> <span class="function"><span class="keyword">function</span> <span class="title">generate_collection_endpoints</span><span class="params">(endpoints, schema, foreign_schema, foreign_field_name)</span></span></span><br><span class="line">  <span class="keyword">local</span> collection_path</span><br><span class="line">  <span class="keyword">if</span> foreign_schema <span class="keyword">then</span></span><br><span class="line">    collection_path = fmt(<span class="string">&quot;/%s/:%s/%s&quot;</span>, foreign_schema.admin_api_name <span class="keyword">or</span></span><br><span class="line">                                        foreign_schema.name,</span><br><span class="line">                                        foreign_schema.name,</span><br><span class="line">                                        schema.admin_api_nested_name <span class="keyword">or</span></span><br><span class="line">                                        schema.admin_api_name <span class="keyword">or</span></span><br><span class="line">                                        schema.name)</span><br><span class="line"></span><br><span class="line">  <span class="keyword">else</span></span><br><span class="line">    collection_path = fmt(<span class="string">&quot;/%s&quot;</span>, schema.admin_api_name <span class="keyword">or</span></span><br><span class="line">                                 schema.name)</span><br><span class="line">  <span class="keyword">end</span></span><br><span class="line"></span><br><span class="line">  endpoints[collection_path] = &#123;</span><br><span class="line">    schema  = schema,</span><br><span class="line">    methods = &#123;</span><br><span class="line">      <span class="comment">--OPTIONS = method_not_allowed,</span></span><br><span class="line">      <span class="comment">--HEAD    = method_not_allowed,</span></span><br><span class="line">      GET     = get_collection_endpoint(schema, foreign_schema, foreign_field_name),</span><br><span class="line">      POST    = post_collection_endpoint(schema, foreign_schema, foreign_field_name),</span><br><span class="line">      <span class="comment">--PUT     = method_not_allowed,</span></span><br><span class="line">      <span class="comment">--PATCH   = method_not_allowed,</span></span><br><span class="line">      <span class="comment">--DELETE  = method_not_allowed,</span></span><br><span class="line">    &#125;,</span><br><span class="line">  &#125;</span><br><span class="line"><span class="keyword">end</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">local</span> <span class="function"><span class="keyword">function</span> <span class="title">post_collection_endpoint</span><span class="params">(schema, foreign_schema, foreign_field_name, method)</span></span></span><br><span class="line">  <span class="keyword">return</span> <span class="function"><span class="keyword">function</span><span class="params">(self, db, helpers, post_process)</span></span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> foreign_schema <span class="keyword">then</span></span><br><span class="line">      <span class="keyword">local</span> foreign_entity, _, err_t = select_entity(<span class="built_in">self</span>, db, foreign_schema)</span><br><span class="line">      <span class="keyword">if</span> err_t <span class="keyword">then</span></span><br><span class="line">        <span class="keyword">return</span> handle_error(err_t)</span><br><span class="line">      <span class="keyword">end</span></span><br><span class="line"></span><br><span class="line">      <span class="keyword">if</span> <span class="keyword">not</span> foreign_entity <span class="keyword">then</span></span><br><span class="line">        <span class="keyword">return</span> not_found()</span><br><span class="line">      <span class="keyword">end</span></span><br><span class="line"></span><br><span class="line">      <span class="built_in">self</span>.args.post[foreign_field_name] = foreign_schema:extract_pk_values(foreign_entity)</span><br><span class="line">    <span class="keyword">end</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">-- 数据插入数据库</span></span><br><span class="line">    <span class="keyword">local</span> entity, _, err_t = insert_entity(<span class="built_in">self</span>, db, schema, method)</span><br><span class="line">    <span class="keyword">if</span> err_t <span class="keyword">then</span></span><br><span class="line">      <span class="keyword">return</span> handle_error(err_t)</span><br><span class="line">    <span class="keyword">end</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">-- 调用注册回调方法</span></span><br><span class="line">    <span class="keyword">if</span> post_process <span class="keyword">then</span></span><br><span class="line">      entity, _, err_t = post_process(entity)</span><br><span class="line">      <span class="keyword">if</span> err_t <span class="keyword">then</span></span><br><span class="line">        <span class="keyword">return</span> handle_error(err_t)</span><br><span class="line">      <span class="keyword">end</span></span><br><span class="line">    <span class="keyword">end</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> created(entity)</span><br><span class="line">  <span class="keyword">end</span></span><br><span class="line"><span class="keyword">end</span></span><br></pre></td></tr></table></figure>
+
+
+
+<h2 id="六-负载选择"><a href="#六-负载选择" class="headerlink" title="六 负载选择"></a>六 负载选择</h2><p>kong 使用 <code>lua-resty-dns-client</code> 进行负载选择, 借助 <code>lua-resty-dns</code> 实现域名解析. 在 <code>lua-resty-dns-client</code> 中抽象出 <code>balancer/host/address</code> 对象,  <code>balancer-host</code>,  <code>host-address</code> 都是一对多关系, 在负载选择最后使用 <code>address</code> 作为结果进行转发.</p>
+<blockquote>
+<p>  在生产环境中应该考虑 host 权重与 address 权重问题, lua-resty-dns-client 对此有阐述.</p>
+</blockquote>
+<p>kong 支持轮询、哈希、最小连接负载方式, 完全由 Lua 代码实现.</p>
+<h3 id="1-轮询"><a href="#1-轮询" class="headerlink" title="1. 轮询"></a>1. 轮询</h3><p>使用表 wheel 存储 address 对象,在实现中使用 <code>randomlist</code> 生成一个随机序列, 用来实现负载随机<strong>分布</strong>. 每个 address 对象会存储其占用的索引, 用于释放索引时使用. wheel 中所有记录都会被占满, 不会有空隙.</p>
+<figure class="highlight lua"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">_M.new</span><span class="params">(opts)</span></span></span><br><span class="line">	<span class="comment">-- ... 忽略无关代码</span></span><br><span class="line">  <span class="keyword">local</span> <span class="built_in">self</span> = <span class="built_in">assert</span>(balancer_base.new(opts))</span><br><span class="line">	<span class="comment">-- ..</span></span><br><span class="line">  <span class="comment">-- inject additional properties</span></span><br><span class="line">  <span class="built_in">self</span>.wheel = <span class="literal">nil</span>   <span class="comment">-- 用于存储负载地址的表</span></span><br><span class="line">  <span class="built_in">self</span>.pointer = <span class="literal">nil</span> <span class="comment">-- 轮询时下个待选择地址</span></span><br><span class="line">  <span class="built_in">self</span>.wheelSize = opts.wheelSize <span class="keyword">or</span> <span class="number">1000</span> <span class="comment">-- 负载地址表大小</span></span><br><span class="line">  <span class="built_in">self</span>.unassignedWheelIndices = <span class="literal">nil</span> <span class="comment">-- wheel 中未分配的索引</span></span><br><span class="line"></span><br><span class="line">  <span class="comment">-- ring_balancer 对 balancer_base 继承</span></span><br><span class="line">  <span class="comment">-- inject overridden methods</span></span><br><span class="line">  <span class="keyword">for</span> name, method <span class="keyword">in</span> <span class="built_in">pairs</span>(ring_balancer) <span class="keyword">do</span></span><br><span class="line">    <span class="built_in">self</span>[name] = method</span><br><span class="line">  <span class="keyword">end</span></span><br><span class="line"></span><br><span class="line">  <span class="comment">-- initialize the balancer</span></span><br><span class="line">  <span class="built_in">self</span>.wheel = new_tab(<span class="built_in">self</span>.wheelSize, <span class="number">0</span>)</span><br><span class="line">  <span class="built_in">self</span>.unassignedWheelIndices = new_tab(<span class="built_in">self</span>.wheelSize, <span class="number">0</span>)</span><br><span class="line">  <span class="built_in">self</span>.pointer = <span class="built_in">math</span>.<span class="built_in">random</span>(<span class="number">1</span>, <span class="built_in">self</span>.wheelSize)  <span class="comment">-- ensure each worker starts somewhere else</span></span><br><span class="line"></span><br><span class="line">  <span class="comment">-- Create a list of entries, and randomize them.</span></span><br><span class="line">  <span class="keyword">local</span> unassignedWheelIndices = <span class="built_in">self</span>.unassignedWheelIndices</span><br><span class="line">  <span class="keyword">local</span> duplicateCheck = new_tab(<span class="built_in">self</span>.wheelSize, <span class="number">0</span>)</span><br><span class="line">  <span class="comment">-- 使用 randomlist 创建一个 1-wheelSize 范围的随机数数组, 数值不会重复. 用于将负载地址随机分布在 wheel 数组中</span></span><br><span class="line">  <span class="keyword">local</span> orderlist = opts.order <span class="keyword">or</span> randomlist(<span class="built_in">self</span>.wheelSize)</span><br><span class="line"></span><br><span class="line">  <span class="keyword">for</span> i = <span class="number">1</span>, <span class="built_in">self</span>.wheelSize <span class="keyword">do</span></span><br><span class="line">    <span class="keyword">local</span> order = orderlist[i]</span><br><span class="line">    unassignedWheelIndices[i] = order</span><br><span class="line">  <span class="keyword">end</span></span><br><span class="line"></span><br><span class="line">  <span class="comment">-- Sort the hosts, to make order deterministic</span></span><br><span class="line">  <span class="comment">-- ...</span></span><br><span class="line">  table_sort(hosts, <span class="function"><span class="keyword">function</span><span class="params">(a,b)</span></span> <span class="keyword">return</span> (a.name..<span class="string">&quot;:&quot;</span>..(a.port <span class="keyword">or</span> <span class="string">&quot;&quot;</span>) &lt; b.name..<span class="string">&quot;:&quot;</span>..(b.port <span class="keyword">or</span> <span class="string">&quot;&quot;</span>)) <span class="keyword">end</span>)</span><br><span class="line">  <span class="comment">-- Insert the hosts</span></span><br><span class="line">  <span class="comment">-- 添加地址, 并在 wheel 中添加索引</span></span><br><span class="line">  <span class="keyword">for</span> _, host <span class="keyword">in</span> <span class="built_in">ipairs</span>(hosts) <span class="keyword">do</span></span><br><span class="line">    <span class="keyword">local</span> ok, err = <span class="built_in">self</span>:addHost(host.name, host.port, host.weight)</span><br><span class="line">  <span class="keyword">end</span></span><br><span class="line"></span><br><span class="line">  <span class="keyword">return</span> <span class="built_in">self</span></span><br><span class="line"><span class="keyword">end</span></span><br></pre></td></tr></table></figure>
+
+<p>地址变更后调用 <code>redistributeIndices</code> 重新分配各个负载在 ‘wheel’ 中的分布:</p>
+<figure class="highlight lua"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">ring_balancer:redistributeIndices</span><span class="params">()</span></span></span><br><span class="line">  <span class="keyword">local</span> totalWeight = <span class="built_in">self</span>.weight <span class="comment">-- Host 变更时会在 base 中会修改 weight</span></span><br><span class="line">  <span class="keyword">local</span> movingIndexList = <span class="built_in">self</span>.unassignedWheelIndices</span><br><span class="line"></span><br><span class="line">  <span class="comment">-- <span class="doctag">NOTE:</span> calculations are based on the &quot;remaining&quot; indices and weights, to</span></span><br><span class="line">  <span class="comment">-- prevent issues due to rounding: eg. 10 equal systems with 19 indices.</span></span><br><span class="line">  <span class="comment">-- Calculated to get each 1.9 indices =&gt; 9 systems would get 1, last system would get 10</span></span><br><span class="line">  <span class="comment">-- by using &quot;remaining&quot; indices, the first would get 1 index, the other 9 would get 2.</span></span><br><span class="line"></span><br><span class="line">  <span class="comment">-- first; reclaim extraneous indices</span></span><br><span class="line">  <span class="keyword">local</span> weightLeft = totalWeight</span><br><span class="line">  <span class="keyword">local</span> indicesLeft = <span class="built_in">self</span>.wheelSize</span><br><span class="line">  <span class="keyword">local</span> addList = &#123;&#125;      <span class="comment">-- addresses that need additional indices</span></span><br><span class="line">  <span class="keyword">local</span> addListCount = &#123;&#125; <span class="comment">-- how many extra indices the address needs</span></span><br><span class="line">  <span class="keyword">local</span> addCount = <span class="number">0</span></span><br><span class="line">  <span class="keyword">local</span> dropped, added = <span class="number">0</span>, <span class="number">0</span></span><br><span class="line">	<span class="comment">-- 便利所有负载</span></span><br><span class="line">  <span class="keyword">for</span> weight, address, _ <span class="keyword">in</span> <span class="built_in">self</span>:addressIter() <span class="keyword">do</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">-- 根据权重, 计算负载索引个数</span></span><br><span class="line">    <span class="keyword">local</span> count</span><br><span class="line">    <span class="keyword">if</span> weightLeft == <span class="number">0</span> <span class="keyword">then</span></span><br><span class="line">      count = <span class="number">0</span></span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">      count = math_floor(indicesLeft * (weight / weightLeft) + <span class="number">0.0001</span>) <span class="comment">-- 0.0001 to bypass float arithmetic issues</span></span><br><span class="line">    <span class="keyword">end</span></span><br><span class="line">    <span class="keyword">local</span> drop = #address.indices - count</span><br><span class="line">    <span class="keyword">if</span> drop &gt; <span class="number">0</span> <span class="keyword">then</span></span><br><span class="line">      <span class="comment">-- we need to reclaim some indices</span></span><br><span class="line">      address:dropIndices(movingIndexList, drop)</span><br><span class="line">      dropped = dropped + drop</span><br><span class="line">    <span class="keyword">elseif</span> drop &lt; <span class="number">0</span> <span class="keyword">then</span></span><br><span class="line">      <span class="comment">-- this one needs extra indices, so record the changes needed</span></span><br><span class="line">      <span class="comment">-- 记录需要添加索引的地址, 稍后为地址分配索引</span></span><br><span class="line">      addCount = addCount + <span class="number">1</span></span><br><span class="line">      addList[addCount] = address</span><br><span class="line">      addListCount[addCount] = -drop  <span class="comment">-- negate because we need to add them</span></span><br><span class="line">    <span class="keyword">end</span></span><br><span class="line">    indicesLeft = indicesLeft - count</span><br><span class="line">    weightLeft = weightLeft - weight</span><br><span class="line">  <span class="keyword">end</span></span><br><span class="line"></span><br><span class="line">  <span class="comment">-- 为地址分配索引</span></span><br><span class="line">  <span class="comment">-- second: add freed indices to the recorded addresses that were short of them</span></span><br><span class="line">  <span class="keyword">for</span> i, address <span class="keyword">in</span> <span class="built_in">ipairs</span>(addList) <span class="keyword">do</span></span><br><span class="line">    address:addIndices(movingIndexList, addListCount[i])</span><br><span class="line">    added = added + addListCount[i]</span><br><span class="line">  <span class="keyword">end</span></span><br><span class="line"></span><br><span class="line">  <span class="keyword">return</span> <span class="built_in">self</span></span><br><span class="line"><span class="keyword">end</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">ring_address:addIndices</span><span class="params">(availableIndicesList, count)</span></span></span><br><span class="line">  count = count <span class="keyword">or</span> #availableIndicesList</span><br><span class="line">  <span class="keyword">if</span> count &gt; <span class="number">0</span> <span class="keyword">then</span></span><br><span class="line">    <span class="keyword">local</span> myWheelIndices = <span class="built_in">self</span>.indices</span><br><span class="line">    <span class="keyword">local</span> size = #myWheelIndices</span><br><span class="line">		<span class="comment">-- ...</span></span><br><span class="line">    <span class="keyword">local</span> wheel = <span class="built_in">self</span>.host.balancer.wheel</span><br><span class="line">    <span class="keyword">local</span> lsize = #availableIndicesList + <span class="number">1</span></span><br><span class="line">    <span class="keyword">for</span> i = <span class="number">1</span>, count <span class="keyword">do</span></span><br><span class="line">      <span class="comment">-- 获取一个未分配索引</span></span><br><span class="line">      <span class="keyword">local</span> availableIdx = lsize - i</span><br><span class="line">      <span class="keyword">local</span> wheelIdx = availableIndicesList[availableIdx]</span><br><span class="line">      availableIndicesList[availableIdx] = <span class="literal">nil</span></span><br><span class="line">      <span class="comment">-- 当前地址增加一个索引,(地址删除索引时使用)</span></span><br><span class="line">      myWheelIndices[size + i] = wheelIdx</span><br><span class="line">      wheel[wheelIdx] = <span class="built_in">self</span></span><br><span class="line">    <span class="keyword">end</span></span><br><span class="line"></span><br><span class="line">  <span class="keyword">end</span></span><br><span class="line">  <span class="keyword">return</span> <span class="built_in">self</span></span><br><span class="line"><span class="keyword">end</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="2-一致哈希"><a href="#2-一致哈希" class="headerlink" title="2. 一致哈希"></a>2. 一致哈希</h3><p>与轮询相似, 使用表 continuum 存储所有负载, 每个负载根据权重得出其在 continuum 表中的索引条数. 在添加负载时会根据 IP、Port、第几条索引计算哈希值, 确定其在 continuum 表中的索引, 参见 <code>consistent_hashing:afterHostUpdate</code> 函数.</p>
+<p>负载选择时会根据哈希值选择负载, 如果 continuum 表中条目为空则索引减一尝试选择之前索引, 参见 <code>consistent_hashing:getPeer</code> 函数.</p>
+<h3 id="3-最小连接"><a href="#3-最小连接" class="headerlink" title="3. 最小连接"></a>3. 最小连接</h3><p>与 Nginx 实现不同, Kong 实现的最小连接是通过使用最小堆记录每个负载的连接数, 选择连接数最小的负载. 使用者需要在负载使用完毕后调用(或通过 GC 触发) <code>release</code> 方法更新负载连接数.</p>
+<h2 id="七-konga"><a href="#七-konga" class="headerlink" title="七 konga"></a>七 konga</h2><p>可以使用 konga 作为管理端, 在编译时需要使用 node 10.x 版本, 安装操作:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">npm install -g n</span><br><span class="line"></span><br><span class="line"><span class="comment">#切换到 10.24.0</span></span><br><span class="line">sudo n v10.24.0</span><br><span class="line">node -v</span><br><span class="line"></span><br><span class="line"><span class="comment"># 数据库初始化</span></span><br><span class="line">su - postgres</span><br><span class="line">psql</span><br><span class="line"><span class="comment"># 创建用户</span></span><br><span class="line">CREATE USER konga WITH PASSWORD <span class="string">&#x27;konga&#x27;</span>;</span><br><span class="line"><span class="comment"># 创建数据库</span></span><br><span class="line">CREATE DATABASE konga OWNER konga;</span><br><span class="line"><span class="comment"># 授权</span></span><br><span class="line">GRANT ALL PRIVILEGES ON DATABASE konga TO konga;</span><br></pre></td></tr></table></figure>
+
+
+
+<h2 id="参考文档"><a href="#参考文档" class="headerlink" title="参考文档"></a>参考文档</h2><ul>
+<li><a target="_blank" rel="noopener" href="https://segmentfault.com/a/1190000017176952">教你使用luarocks来创建rock包</a></li>
+<li><a target="_blank" rel="noopener" href="https://docs.konghq.com/enterprise/2.4.x/admin-api/#upstream-object">Kong Api</a></li>
+<li><a target="_blank" rel="noopener" href="http://kong-admin.pocketdigi.com/#/services/add">kong admin ui demo</a></li>
+<li><a target="_blank" rel="noopener" href="https://github.com/pocketdigi/kong-admin-ui">kong admin ui</a></li>
+<li><a target="_blank" rel="noopener" href="https://leafo.net/lapis/reference/lua_getting_started.html">Lapis</a></li>
+<li><a target="_blank" rel="noopener" href="https://sexywp.com/openresty-notes-lapis.htm">openresty-notes-lapis</a></li>
+</ul>
+
+        </div>
+        
+
+    </article>
+    
+    <section id="comments">
+        
+    </section>
+
+
+    
+
+</main>
+
+
+<aside style="" id="sidebar" class="aside aside-fixture">
+    <div class="toc-sidebar">
+        <nav id="toc" class="article-toc">
+            <h3 class="toc-title">文章目录</h3>
+            <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80-%E5%9F%BA%E4%BA%8E%E6%BA%90%E7%A0%81%E5%AE%89%E8%A3%85"><span class="toc-number">1.</span> <span class="toc-text">一 基于源码安装</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-%E4%BE%9D%E8%B5%96%E5%AE%89%E8%A3%85"><span class="toc-number">1.1.</span> <span class="toc-text">1. 依赖安装</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-Kong-%E5%AE%89%E8%A3%85"><span class="toc-number">1.2.</span> <span class="toc-text">2. Kong 安装</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C-%E9%85%8D%E7%BD%AE%E7%AE%A1%E7%90%86"><span class="toc-number">2.</span> <span class="toc-text">二 配置管理</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-Kong-%E9%85%8D%E7%BD%AE"><span class="toc-number">2.1.</span> <span class="toc-text">1. Kong 配置</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-Kong-%E9%BB%98%E8%AE%A4%E7%9B%91%E5%90%AC%E7%AB%AF%E5%8F%A3"><span class="toc-number">2.2.</span> <span class="toc-text">2. Kong 默认监听端口</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-%E5%B8%B8%E7%94%A8-API"><span class="toc-number">2.3.</span> <span class="toc-text">3. 常用 API</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89-%E6%95%B0%E6%8D%AE%E5%B1%82%E9%9D%A2%E4%BB%A3%E7%A0%81"><span class="toc-number">3.</span> <span class="toc-text">三 数据层面代码</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-%E5%BA%93%E5%8A%A0%E8%BD%BD"><span class="toc-number">3.1.</span> <span class="toc-text">1. 库加载</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-init"><span class="toc-number">3.2.</span> <span class="toc-text">2. init</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-init-worker"><span class="toc-number">3.3.</span> <span class="toc-text">3. init_worker</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-ssl-certificate"><span class="toc-number">3.4.</span> <span class="toc-text">4. ssl_certificate</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-rewrite"><span class="toc-number">3.5.</span> <span class="toc-text">5. rewrite</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#6-access"><span class="toc-number">3.6.</span> <span class="toc-text">6. access</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#7-balancer"><span class="toc-number">3.7.</span> <span class="toc-text">7. balancer</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#8-header-filter"><span class="toc-number">3.8.</span> <span class="toc-text">8. header filter</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#9-body-filter"><span class="toc-number">3.9.</span> <span class="toc-text">9. body filter</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#10-log"><span class="toc-number">3.10.</span> <span class="toc-text">10. log</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9B%9B-%E6%95%B0%E6%8D%AE%E5%B1%82%E9%9D%A2%E4%BB%A3%E7%A0%81-%E8%B7%AF%E7%94%B1%E5%88%9D%E5%A7%8B%E5%8C%96"><span class="toc-number">4.</span> <span class="toc-text">四 数据层面代码 - 路由初始化</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-%E4%BC%98%E5%85%88%E7%BA%A7"><span class="toc-number">4.1.</span> <span class="toc-text">1. 优先级</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E8%B7%AF%E7%94%B1%E5%88%86%E7%B1%BB"><span class="toc-number">4.2.</span> <span class="toc-text">2. 路由分类</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-%E8%B7%AF%E7%94%B1%E5%8C%B9%E9%85%8D"><span class="toc-number">4.3.</span> <span class="toc-text">3. 路由匹配</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%94-%E6%95%B0%E6%8D%AE%E5%B1%82%E9%9D%A2%E4%BB%A3%E7%A0%81-%E4%BA%8B%E4%BB%B6%E8%A7%A6%E5%8F%91%E4%B8%8E%E7%AE%A1%E7%90%86API"><span class="toc-number">5.</span> <span class="toc-text">五 数据层面代码 - 事件触发与管理API</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-%E4%BA%8B%E4%BB%B6"><span class="toc-number">5.1.</span> <span class="toc-text">1. 事件</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E7%AE%A1%E7%90%86-API"><span class="toc-number">5.2.</span> <span class="toc-text">2. 管理 API</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%AD-%E8%B4%9F%E8%BD%BD%E9%80%89%E6%8B%A9"><span class="toc-number">6.</span> <span class="toc-text">六 负载选择</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-%E8%BD%AE%E8%AF%A2"><span class="toc-number">6.1.</span> <span class="toc-text">1. 轮询</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E4%B8%80%E8%87%B4%E5%93%88%E5%B8%8C"><span class="toc-number">6.2.</span> <span class="toc-text">2. 一致哈希</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-%E6%9C%80%E5%B0%8F%E8%BF%9E%E6%8E%A5"><span class="toc-number">6.3.</span> <span class="toc-text">3. 最小连接</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%83-konga"><span class="toc-number">7.</span> <span class="toc-text">七 konga</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8F%82%E8%80%83%E6%96%87%E6%A1%A3"><span class="toc-number">8.</span> <span class="toc-text">参考文档</span></a></li></ol>
+        </nav>
+    </div>
+</aside>
+
+
+
+
+
+        </section>
+        <footer class="hidden lg:block fixed bottom-0 left-0 sm:w-1/12 lg:w-1/6 bg-gray-100 z-40">
+    
+    <div class="footer-social-links">
+        
+            <a target="_blank" rel="noopener" href="https://github.com/juzipeek">
+                <i class="iconfont icon-github"></i>
+            </a>
+        
+    </div>
+    
+    
+</footer>
+
+        <div id="mask" class="hidden mask fixed inset-0 bg-gray-900 opacity-75 z-40"></div>
+        <div id="search-view-container" class="hidden shadow-xl"></div>
+        
+<script src="/js/dom-event.min.js"></script>
+
+
+
+<script src="/js/local-search.min.js"></script>
+
+
+
+    <script src="//cdn.jsdelivr.net/npm/lightgallery.js@1.1.3/dist/js/lightgallery.min.js"></script>
+    
+<script src="/js/light-gallery.min.js"></script>
+
+
+
+
+
+
+    </body>
+</html>

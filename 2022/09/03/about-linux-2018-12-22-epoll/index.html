@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html  lang="zh-CN" >
+    <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, minimum-scale=1, initial-scale=1, maximum-scale=5, viewport-fit=cover">
+    <title>epoll | 自留地</title>
+    <meta name="description" content="概述epoll 系列描述符用来监控多个文件描述符是否可用。epoll 系列相关函数包括：epoll_create、epoll_ctl、epoll_wait，其中：  epoll_create   创建一个 epoll 实例，并返回一个引用该实例的文件描述符。  epoll_ctl   通过 epoll_ctl 将感兴趣的文件描述符注册到 epoll 实例。  epoll_wait   等待 IO">
+<meta property="og:type" content="article">
+<meta property="og:title" content="epoll">
+<meta property="og:url" content="https://juzipeek.github.io/2022/09/03/about-linux-2018-12-22-epoll/index.html">
+<meta property="og:site_name" content="自留地">
+<meta property="og:description" content="概述epoll 系列描述符用来监控多个文件描述符是否可用。epoll 系列相关函数包括：epoll_create、epoll_ctl、epoll_wait，其中：  epoll_create   创建一个 epoll 实例，并返回一个引用该实例的文件描述符。  epoll_ctl   通过 epoll_ctl 将感兴趣的文件描述符注册到 epoll 实例。  epoll_wait   等待 IO">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2022-09-03T14:47:35.236Z">
+<meta property="article:modified_time" content="2022-09-03T14:56:56.724Z">
+<meta property="article:author" content="zhou cheng jie">
+<meta property="article:tag" content="Linux">
+<meta name="twitter:card" content="summary">
+
+    
+    <link rel="icon" href="/images/favicon.ico" type="image/x-icon">
+
+    
+<link rel="stylesheet" href="/css/common.min.css">
+
+
+
+    
+    
+    
+    
+        <link href="//cdn.jsdelivr.net/npm/lightgallery.js@1.1.3/dist/css/lightgallery.min.css" rel="stylesheet">
+    
+    
+    
+<link rel="stylesheet" href="/css/iconfont.min.css">
+
+    
+    <script>
+        (function(e,t,n,i,s,a,c){e[n]=e[n]||function(){(e[n].q=e[n].q||[]).push(arguments)}
+        ;a=t.createElement(i);c=t.getElementsByTagName(i)[0];a.async=true;a.src=s
+        ;c.parentNode.insertBefore(a,c)
+        })(window,document,"galite","script","https://cdn.jsdelivr.net/npm/ga-lite@2/dist/ga-lite.min.js");
+
+        galite('create', 'G-HFGFGEWD53', 'auto');
+        galite('send', 'pageview');
+    </script>
+    
+<meta name="generator" content="Hexo 5.4.2"></head>
+
+    <body>
+        <header class="header header-fixture">
+    <div class="profile-search-wrap flex sm:block">
+        
+        
+        <div class="profile sm:text-center md:px-1 lg:px-3 sm:pb-4 sm:pt-6">
+            <a id="avatar" role="link" href="https://github.com/juzipeek" class="inline-block lg:w-16 lg:h-16 w-8 h-8 m-2" target="_blank" rel="noopener" rel="noreferrer" >
+                <img src="/images/yellow.jpg" class="rounded-full" alt="avatar">
+            </a>
+            <h2 id="name" class="hidden lg:block">zhou cheng jie</h2>
+            <h3 id="title" class="hidden lg:block">coder</h3>
+            
+            <small id="location" class="hidden lg:block">
+                <i class="iconfont icon-map-icon"></i>
+                BeiJing, China
+            </small>
+            
+        </div>
+        
+        
+<div class="search flex-1 flex lg:inline-block sm:hidden lg:px-4 lg:mt-2 lg:mb-4 lg:w-full">
+    <form id="search-form" class="my-auto flex-1 lg:border lg:border-solid lg:border-gray-200">
+        <div class="input-group table bg-gray-100 lg:bg-white w-full">
+            <input id="search-input" type="text" placeholder="搜索" class="inline-block w-full bg-gray-100 lg:bg-white p-1">
+            <span class="table-cell">
+                <button name="search tigger button" disabled>
+                    <i class="iconfont icon-search m-2"></i>
+                </button>
+            </span>
+        </div>
+    </form>
+        
+<div id="content-json" data-placeholder="搜索" class="invisible hidden">/content.json</div>
+<script id="search-teamplate" type="text/html" data-path="/content.json">
+    <div>
+        <div class="search-header bg-gray-400">
+            <input id="actual-search-input" model="keyword" ref="input" class="inline-block w-full h-10 px-2 py-1" placeholder="搜索" type="text">
+        </div>
+        <div class="search-result bg-gray-200">
+            {{#each searchPosts}}
+            <a href="/{{ path }}" class="result-item block px-2 pb-3 mb-1 pt-1 hover:bg-indigo-100">
+                <i class="iconfont icon-file"></i>
+                <h1 class="result-title inline font-medium text-lg">{{ title }}</h1>
+                <p class="result-content text-gray-600 text-sm">{{{ text }}}</p>
+            </a>
+            {{/each}}
+        </div>
+    </div>
+</script>
+
+</div>
+
+
+        <button name="menu toogle button" id="menu-toggle-btn" class="block sm:hidden p-3" role="button" aria-expanded="false">
+            <i class="iconfont icon-hamburger"></i>
+        </button>
+    </div>
+    <nav id="menu-nav" class="hidden sm:flex flex-col">
+        
+        
+            <div class="menu-item menu-home" role="menuitem">
+                <a href="/.">
+                    <i class="iconfont icon-home" aria-hidden="true"></i>
+                    <span class="menu-title">首页</span>
+                </a>
+            </div>
+        
+        
+            <div class="menu-item menu-archives" role="menuitem">
+                <a href="/archives">
+                    <i class="iconfont icon-archive" aria-hidden="true"></i>
+                    <span class="menu-title">归档</span>
+                </a>
+            </div>
+        
+        
+            <div class="menu-item menu-categories" role="menuitem">
+                <a href="/categories">
+                    <i class="iconfont icon-folder" aria-hidden="true"></i>
+                    <span class="menu-title">分类</span>
+                </a>
+            </div>
+        
+        
+            <div class="menu-item menu-tags" role="menuitem">
+                <a href="/tags">
+                    <i class="iconfont icon-tag" aria-hidden="true"></i>
+                    <span class="menu-title">标签</span>
+                </a>
+            </div>
+        
+        
+            <div class="menu-item menu-about" role="menuitem">
+                <a href="/about">
+                    <i class="iconfont icon-cup" aria-hidden="true"></i>
+                    <span class="menu-title">关于</span>
+                </a>
+            </div>
+        
+        
+<div class="social-links flex sm:flex-col lg:hidden mt-5">
+    
+        <span class="social-item text-center">
+            <a target="_blank" rel="noopener" href="https://github.com/juzipeek">
+                <i class="iconfont social-icon icon-github"></i>
+                <span class="menu-title hidden lg:inline">menu.github</span>
+            </a>
+        </span>
+    
+</div>
+
+
+    </nav>
+</header>
+
+        <section class="main-section">
+            
+    <main class="flex-1 px-4 py-14 md:px-5 lg:px-8 lg:py-4 relative min-h-screen">
+    
+
+    <article class="content article article-archives article-type-list" itemscope="">
+        <header class="article-header">
+            
+    
+        <h1 class="article-title text-lg" itemprop="name">
+            epoll
+        </h1>
+    
+
+
+
+            <p class="article-meta mb-3 text-xs">
+                <span class="article-date">
+    <i class="iconfont icon-calendar-check"></i>
+	<a href="/2022/09/03/about-linux-2018-12-22-epoll/" class="article-date">
+	  <time datetime="2022-09-03T14:47:35.236Z" itemprop="datePublished">9月 3</time>
+	</a>
+</span>
+
+                
+    <span class="article-category">
+    <i class="iconfont icon-folder"></i>
+    <a class="article-category-link" href="/categories/Linux/">Linux</a>
+  </span>
+
+
+                
+    <span class="article-tags">
+    <i class="iconfont icon-tag"></i>
+    <a class="article-tag-none-link" href="/tags/Linux/" rel="tag">Linux</a>
+  </span>
+
+
+                <span class="_partial/post-comment"><i class="icon icon-comment"></i>
+                    <a href="/2022/09/03/about-linux-2018-12-22-epoll/#comments" class="article-comment-link">
+                        评论
+                    </a>
+                </span>
+                
+    
+        <span class="post-wordcount" itemprop="wordCount">字数统计: 1.9k(字)</span>
+    
+    
+        <span class="post-readcount" itemprop="timeRequired">阅读时长: 9(分)</span>
+    
+
+
+            </p>
+        </header>
+        <div class="marked-body article-body">
+            <h2 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h2><p><code>epoll</code> 系列描述符用来监控多个文件描述符是否可用。<code>epoll</code> 系列相关函数包括：<code>epoll_create</code>、<code>epoll_ctl</code>、<code>epoll_wait</code>，其中：</p>
+<ul>
+<li><p><code>epoll_create</code></p>
+<p>  创建一个 <code>epoll</code> 实例，并返回一个引用该实例的文件描述符。</p>
+</li>
+<li><p><code>epoll_ctl</code></p>
+<p>  通过 <code>epoll_ctl</code> 将感兴趣的文件描述符注册到 <code>epoll</code> 实例。</p>
+</li>
+<li><p><code>epoll_wait</code></p>
+<p>  等待 <code>IO</code> 事件发生，如果当前无事件则阻塞当前线程。</p>
+</li>
+</ul>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">int</span> <span class="title function_">epoll_create</span><span class="params">(<span class="type">int</span> size)</span>；<span class="comment">// 创建一个 epoll 句柄，size 参数已被忽略</span></span><br><span class="line"><span class="type">int</span> <span class="title function_">epoll_ctl</span><span class="params">(<span class="type">int</span> epfd, <span class="type">int</span> op, <span class="type">int</span> fd, <span class="keyword">struct</span> epoll_event *event)</span>；</span><br><span class="line"><span class="type">int</span> <span class="title function_">epoll_wait</span><span class="params">(<span class="type">int</span> epfd, <span class="keyword">struct</span> epoll_event * events, <span class="type">int</span> maxevents, <span class="type">int</span> timeout)</span>;</span><br></pre></td></tr></table></figure>
+
+<h3 id="epoll-create"><a href="#epoll-create" class="headerlink" title="epoll_create"></a>epoll_create</h3><p>创建一个 <code>epoll</code> 的句柄，2.6.8 以后版本 <code>size</code> 被忽略。返回的 <code>epoll</code> 示例实际是一个文件描述符，在使用完毕时需要关闭。</p>
+<h3 id="epoll-ctl"><a href="#epoll-ctl" class="headerlink" title="epoll_ctl"></a>epoll_ctl</h3><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">int</span> <span class="title function_">epoll_ctl</span><span class="params">(<span class="type">int</span> epfd, <span class="type">int</span> op, <span class="type">int</span> fd, <span class="keyword">struct</span> epoll_event *event)</span>；</span><br></pre></td></tr></table></figure>
+<p>对 <code>epoll</code> 实例进行操作。<code>op</code> 参数可选值：</p>
+<ul>
+<li>  <code>EPOLL_CTL_ADD</code>：添加参数 <code>fd</code> 的监听事件</li>
+<li>  <code>EPOLL_CTL_DEL</code>：删除参数 <code>fd</code> 的监听事件</li>
+<li>  <code>EPOLL_CTL_MOD</code>：修改参数 <code>fd</code> 的监听事件</li>
+</ul>
+<p><code>struct epoll_event</code> 结构如下：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">union</span> <span class="title">epoll_data</span> &#123;</span></span><br><span class="line">    <span class="type">void</span>        *ptr;</span><br><span class="line">    <span class="type">int</span>          fd;</span><br><span class="line">    <span class="type">uint32_t</span>     u32;</span><br><span class="line">    <span class="type">uint64_t</span>     u64;</span><br><span class="line">&#125; <span class="type">epoll_data_t</span>;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">epoll_event</span> &#123;</span></span><br><span class="line">    <span class="type">uint32_t</span>     events;      <span class="comment">/* Epoll events */</span></span><br><span class="line">    <span class="type">epoll_data_t</span> data;        <span class="comment">/* User data variable */</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p>结构体中 <code>events</code> 成员描述关注的事件类型掩码，取值范围如下：</p>
+<ul>
+<li><p>EPOLLIN<br>  表示对应的文件描述符可以读</p>
+</li>
+<li><p>EPOLLOUT</p>
+<p>  表示对应的文件描述符可以写</p>
+</li>
+<li><p>EPOLLPRI</p>
+<p>  表示对应的文件描述符有紧急的数据可读，一般是带外数据</p>
+</li>
+<li><p>EPOLLERR</p>
+<p>  表示对应的文件描述符发生错误</p>
+</li>
+<li><p>EPOLLET</p>
+<p>  将文件描述符设置为边沿触发模式</p>
+</li>
+<li><p>EPOLLEXCLUSIVE</p>
+<p>  Linux 4.5 内核添加，在操作系统内核级别解决了“惊群”问题</p>
+</li>
+</ul>
+<h3 id="epoll-wait"><a href="#epoll-wait" class="headerlink" title="epoll_wait"></a>epoll_wait</h3><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">int</span> <span class="title function_">epoll_wait</span><span class="params">(<span class="type">int</span> epfd, <span class="keyword">struct</span> epoll_event *events, <span class="type">int</span> maxevents, <span class="type">int</span> timeout)</span>;</span><br></pre></td></tr></table></figure>
+
+<p>等待 <code>epfd</code> 关联的 <code>poll</code> 实例上发生事件。参数 <code>events</code> 用来从内核接收发生的事件，<code>maxevents</code> 设置最多返回的事件数目，<code>timeout</code> 为超时时间。与 <code>epoll_wait</code> 相似的函数 <code>epoll_pwait</code> 可以忽略信号产生，仅当事件发生或超时函数才返回。</p>
+<h2 id="边沿触发与水平触发"><a href="#边沿触发与水平触发" class="headerlink" title="边沿触发与水平触发"></a>边沿触发与水平触发</h2><p><code>epoll</code> 对于 <code>fd</code> 支持边沿触发（ET，edge trigger）和水平触发（LT，level trigger）两种模式。<code>man</code> 手册（<code>man 7 epoll</code>）有两者区别的讲解。假设有如下场景：</p>
+<ol>
+<li> 在一个线程 A 将管道描述符写关闭，将管道描述符（rfd）在 <code>epoll</code> 实例上注册，并调用 <code>epoll_wait</code> 等待事件发生。</li>
+<li> 另一个线程 B 将管道描述符的读关闭，在管道上写入 2kB 的数据。</li>
+<li> 在线程 A 中，<code>rfd</code> 作为已准备好事件被 <code>epoll_wait</code> 返回。</li>
+<li> 线程 A 读取 <code>rfd</code> 中的 1kB 数据。</li>
+<li> 对 <code>epoll_wait</code> 的调用已完成。</li>
+</ol>
+<p>如果在第一步中添加 <code>rfd</code> 到 <code>epoll</code> 实例时设置触发方式为 <code>EPOLLET</code> 模式，在 5 步完成 <code>epoll_wait</code> 的调用后即使 <code>rdf</code> 中有可读数据，<code>rfd</code> 的事件也不会触发，此时请求被 <code>hang</code>（线程 B 在等待线程 A 的应答数据，线程 A 在继续等待请求数据）。这是因为 <code>EPOLLET</code> 模式仅当变化发生在文件描述符上时才会触发事件。因此在第 5 步中，线程 A 一直在等待已经存在与 <code>rfd</code> 缓冲区中的数据。在上面的示例中，第 2 步因为写数据导致 <code>rfd</code> 的可读事件触发，同时此事件在第 3 步被消费。由于第 4 步读操作并未将所有可读数据读取，因此在第 5 步完成对 <code>epoll_wait</code> 的调用后，有可能导致此缓冲区中的数据一直未被读取。</p>
+<p>使用 <code>EPOLLET</code> 模式的应用程序应该使用非阻塞文件描述符，以避免在处理多个文件描述符是阻塞读或写数据。将 <code>epoll</code> 用作 <code>EPOLLET</code> 模式的建议如下：</p>
+<ul>
+<li>  使用非阻塞文件描述符</li>
+<li>  在进行 <code>read</code> 或 <code>write</code> 操作时等待 <code>EAGAIN</code> 错误发生才认为事件处理结束</li>
+</ul>
+<h2 id="使用示例"><a href="#使用示例" class="headerlink" title="使用示例"></a>使用示例</h2><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br></pre></td><td class="code"><pre><span class="line"> <span class="meta">#<span class="keyword">define</span> MAX_EVENTS 10</span></span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">epoll_event</span> <span class="title">ev</span>, <span class="title">events</span>[<span class="title">MAX_EVENTS</span>];</span></span><br><span class="line"></span><br><span class="line"><span class="type">int</span> listen_sock, conn_sock, nfds, epollfd;</span><br><span class="line"></span><br><span class="line"><span class="comment">/* Code to set up listening socket, &#x27;listen_sock&#x27;, (socket(), bind(), listen()) omitted */</span></span><br><span class="line"><span class="comment">// listen_sock 已设置为非阻塞套接字</span></span><br><span class="line">epollfd = epoll_create1(<span class="number">0</span>);</span><br><span class="line"><span class="keyword">if</span> (epollfd == <span class="number">-1</span>) &#123;</span><br><span class="line">    perror(<span class="string">&quot;epoll_create1&quot;</span>);</span><br><span class="line">    <span class="built_in">exit</span>(EXIT_FAILURE);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">ev.events = EPOLLIN;</span><br><span class="line">ev.data.fd = listen_sock;</span><br><span class="line"><span class="keyword">if</span> (epoll_ctl(epollfd, EPOLL_CTL_ADD, listen_sock, &amp;ev) == <span class="number">-1</span>) &#123;</span><br><span class="line">    perror(<span class="string">&quot;epoll_ctl: listen_sock&quot;</span>);</span><br><span class="line">    <span class="built_in">exit</span>(EXIT_FAILURE);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> (;;) &#123;</span><br><span class="line">    nfds = epoll_wait(epollfd, events, MAX_EVENTS, <span class="number">-1</span>);</span><br><span class="line">    <span class="keyword">if</span> (nfds == <span class="number">-1</span>) &#123;</span><br><span class="line">        perror(<span class="string">&quot;epoll_wait&quot;</span>);</span><br><span class="line">        <span class="built_in">exit</span>(EXIT_FAILURE);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> (n = <span class="number">0</span>; n &lt; nfds; ++n) &#123;</span><br><span class="line">        <span class="keyword">if</span> (events[n].data.fd == listen_sock) &#123;</span><br><span class="line">            conn_sock = accept(listen_sock, (<span class="keyword">struct</span> sockaddr *) &amp;addr, &amp;addrlen);</span><br><span class="line">            <span class="keyword">if</span> (conn_sock == <span class="number">-1</span>) &#123;</span><br><span class="line">                perror(<span class="string">&quot;accept&quot;</span>);</span><br><span class="line">                <span class="built_in">exit</span>(EXIT_FAILURE);</span><br><span class="line">            &#125;</span><br><span class="line">            setnonblocking(conn_sock);</span><br><span class="line">            ev.events = EPOLLIN | EPOLLET; <span class="comment">// 边沿触发模式</span></span><br><span class="line">            ev.data.fd = conn_sock;</span><br><span class="line">            <span class="keyword">if</span> (epoll_ctl(epollfd, EPOLL_CTL_ADD, conn_sock, &amp;ev) == <span class="number">-1</span>) &#123;</span><br><span class="line">                perror(<span class="string">&quot;epoll_ctl: conn_sock&quot;</span>);</span><br><span class="line">                <span class="built_in">exit</span>(EXIT_FAILURE);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="comment">// 函数 do_use_fd（）使用新的就绪文件描述符，直到 read 或 write 返回 EAGAIN。 </span></span><br><span class="line">            <span class="comment">// 事件驱动的状态机应用程序应在收到 EAGAIN 后记录其当前状态，以便在下次调用 do_use_fd（）时，它将继续从之前停止的位置 read 或 write。</span></span><br><span class="line">            do_use_fd(events[n].data.fd);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>出于性能原因，使用边缘触发接口时可以通过指定（EPOLLIN | EPOLLOUT）在 <code>epoll</code> 接口 <code>EPOLL_CTL_ADD</code> 中添加文件描述符一次。 这允许您使用 <code>EPOLL_CTL_MOD</code> 调用 <code>epoll_ctl</code>，避免在 <code>EPOLLIN</code> 和 <code>EPOLLOUT</code> 之间连续切换。</p>
+<h2 id="manpage-QA"><a href="#manpage-QA" class="headerlink" title="manpage QA"></a>manpage QA</h2><p>本节摘选自 <code>man 7 epoll</code> QA 部分：</p>
+<ol>
+<li><p>What happens if you register the same file descriptor on an epoll instance twice?</p>
+<blockquote>
+<blockquote>
+<p>  You will probably get EEXIST.  However, it is possible to add a duplicate (dup(2), dup2(2), fcntl(2) F_DUPFD) file descriptor to the same epoll instance. This can be a useful technique for filtering events, if the duplicate file descriptors are registered with different events masks.</p>
+</blockquote>
+</blockquote>
+</li>
+<li><p>Can two epoll instances wait for the same file descriptor?  If so, are events reported to both epoll file descriptors?</p>
+<blockquote>
+<blockquote>
+<p>  Yes, and events would be reported to both.  However, careful programming may be needed to do this correctly.</p>
+</blockquote>
+</blockquote>
+</li>
+<li><p>Is the epoll file descriptor itself poll/epoll/selectable?</p>
+<blockquote>
+<blockquote>
+<p>  Yes.  If an epoll file descriptor has events waiting, then it will indicate as being readable.</p>
+</blockquote>
+</blockquote>
+</li>
+<li><p>What happens if one attempts to put an epoll file descriptor into its own file descriptor set?</p>
+<blockquote>
+<blockquote>
+<p>  The epoll_ctl(2) call will fail (EINVAL).  However, you can add an epoll file descriptor inside another epoll file descriptor set.</p>
+</blockquote>
+</blockquote>
+</li>
+<li><p>Can I send an epoll file descriptor over a UNIX domain socket to another process?</p>
+<blockquote>
+<blockquote>
+<p>  Yes, but it does not make sense to do this, since the receiving process would not have copies of the file descriptors in the epoll set.</p>
+</blockquote>
+</blockquote>
+</li>
+<li><p>Will closing a file descriptor cause it to be removed from all epoll sets automatically?</p>
+<blockquote>
+<blockquote>
+<p>  Yes, but be aware of the following point.  A file descriptor is a reference to an open file description (see open(2)).  Whenever  a  file  descriptor  is duplicated via dup(2), dup2(2), fcntl(2) F_DUPFD, or fork(2), a new file descriptor referring to the same open file description is created.  An open file description continues to exist until all file descriptors referring to it have been closed.  A file descriptor is removed from an epoll  set  only  after all the file descriptors referring to the underlying open file description have been closed (or before if the file descriptor is explicitly removed using epoll_ctl(2) EPOLL_CTL_DEL).  This means that even after a file descriptor that is part of an epoll set has been closed, events may be reported for that file descriptor if other file descriptors referring to the same underlying file description remain open.</p>
+</blockquote>
+</blockquote>
+</li>
+<li><p>If more than one event occurs between epoll_wait(2) calls, are they combined or reported separately?</p>
+<blockquote>
+<blockquote>
+<p>  They will be combined.</p>
+</blockquote>
+</blockquote>
+</li>
+<li><p>Does an operation on a file descriptor affect the already collected but not yet reported events?</p>
+<blockquote>
+<blockquote>
+<p>  You can do two operations on an existing file descriptor. Remove would be meaningless for this case. Modify will reread available I/O.</p>
+</blockquote>
+</blockquote>
+</li>
+<li><p>Do I need to continuously read/write a file descriptor until EAGAIN when using the EPOLLET flag (edge-triggered behavior) ?</p>
+<blockquote>
+<blockquote>
+<p>  Receiving  an  event  from  epoll_wait(2) should suggest to you that such file descriptor is ready for the requested I/O operation.  You must consider it ready until the next (nonblocking) read/write yields EAGAIN.  When and how you will use the file descriptor is entirely up to you.<br>  For packet/token-oriented files (e.g., datagram socket, terminal in canonical mode), the only way to detect the end of the read/write  I/O  space  is  to continue to read/write until EAGAIN.<br>  For  stream-oriented  files  (e.g., pipe, FIFO, stream socket), the condition that the read/write I/O space is exhausted can also be detected by checking the amount of data read from / written to the target file descriptor.  For example, if you call read(2) by asking to read a certain amount  of  data  and read(2)  returns  a lower number of bytes, you can be sure of having exhausted the read I/O space for the file descriptor.  The same is true when writing using write(2).  (Avoid this latter technique if you cannot guarantee that the monitored file descriptor always refers to a stream-oriented file.)</p>
+</blockquote>
+</blockquote>
+</li>
+</ol>
+
+        </div>
+        
+
+    </article>
+    
+    <section id="comments">
+        
+    </section>
+
+
+    
+
+</main>
+
+
+<aside style="" id="sidebar" class="aside aside-fixture">
+    <div class="toc-sidebar">
+        <nav id="toc" class="article-toc">
+            <h3 class="toc-title">文章目录</h3>
+            <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%A6%82%E8%BF%B0"><span class="toc-number">1.</span> <span class="toc-text">概述</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#epoll-create"><span class="toc-number">1.1.</span> <span class="toc-text">epoll_create</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#epoll-ctl"><span class="toc-number">1.2.</span> <span class="toc-text">epoll_ctl</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#epoll-wait"><span class="toc-number">1.3.</span> <span class="toc-text">epoll_wait</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%BE%B9%E6%B2%BF%E8%A7%A6%E5%8F%91%E4%B8%8E%E6%B0%B4%E5%B9%B3%E8%A7%A6%E5%8F%91"><span class="toc-number">2.</span> <span class="toc-text">边沿触发与水平触发</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BD%BF%E7%94%A8%E7%A4%BA%E4%BE%8B"><span class="toc-number">3.</span> <span class="toc-text">使用示例</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#manpage-QA"><span class="toc-number">4.</span> <span class="toc-text">manpage QA</span></a></li></ol>
+        </nav>
+    </div>
+</aside>
+
+
+
+
+
+        </section>
+        <footer class="hidden lg:block fixed bottom-0 left-0 sm:w-1/12 lg:w-1/6 bg-gray-100 z-40">
+    
+    <div class="footer-social-links">
+        
+            <a target="_blank" rel="noopener" href="https://github.com/juzipeek">
+                <i class="iconfont icon-github"></i>
+            </a>
+        
+    </div>
+    
+    
+</footer>
+
+        <div id="mask" class="hidden mask fixed inset-0 bg-gray-900 opacity-75 z-40"></div>
+        <div id="search-view-container" class="hidden shadow-xl"></div>
+        
+<script src="/js/dom-event.min.js"></script>
+
+
+
+<script src="/js/local-search.min.js"></script>
+
+
+
+    <script src="//cdn.jsdelivr.net/npm/lightgallery.js@1.1.3/dist/js/lightgallery.min.js"></script>
+    
+<script src="/js/light-gallery.min.js"></script>
+
+
+
+
+
+
+    </body>
+</html>

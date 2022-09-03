@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html  lang="zh-CN" >
+    <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, minimum-scale=1, initial-scale=1, maximum-scale=5, viewport-fit=cover">
+    <title>OpenResty Api - control api | 自留地</title>
+    <meta name="description" content="一 概述ngx.redirect ngx.exec ngx.throw_error ngx.exit ngx.on_abort 二 函数1. ngx.redirect1ngx.redirect(uri, status?)  可介入的阶段：rewrite_by_lua, access_by_lua, content_by_lua 发出重定向应答，跳转到 uri 参数指定的 uri， HTTP 状态码">
+<meta property="og:type" content="article">
+<meta property="og:title" content="OpenResty Api - control api">
+<meta property="og:url" content="https://juzipeek.github.io/2022/09/03/nginx-2019-07-28-openresty-api-control-api/index.html">
+<meta property="og:site_name" content="自留地">
+<meta property="og:description" content="一 概述ngx.redirect ngx.exec ngx.throw_error ngx.exit ngx.on_abort 二 函数1. ngx.redirect1ngx.redirect(uri, status?)  可介入的阶段：rewrite_by_lua, access_by_lua, content_by_lua 发出重定向应答，跳转到 uri 参数指定的 uri， HTTP 状态码">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2022-09-03T12:55:44.507Z">
+<meta property="article:modified_time" content="2022-09-03T12:55:44.507Z">
+<meta property="article:author" content="zhou cheng jie">
+<meta property="article:tag" content="C">
+<meta property="article:tag" content="Lua">
+<meta property="article:tag" content="NGINX">
+<meta property="article:tag" content="OpenResty">
+<meta name="twitter:card" content="summary">
+
+    
+    <link rel="icon" href="/images/favicon.ico" type="image/x-icon">
+
+    
+<link rel="stylesheet" href="/css/common.min.css">
+
+
+
+    
+    
+    
+    
+        <link href="//cdn.jsdelivr.net/npm/lightgallery.js@1.1.3/dist/css/lightgallery.min.css" rel="stylesheet">
+    
+    
+    
+<link rel="stylesheet" href="/css/iconfont.min.css">
+
+    
+    <script>
+        (function(e,t,n,i,s,a,c){e[n]=e[n]||function(){(e[n].q=e[n].q||[]).push(arguments)}
+        ;a=t.createElement(i);c=t.getElementsByTagName(i)[0];a.async=true;a.src=s
+        ;c.parentNode.insertBefore(a,c)
+        })(window,document,"galite","script","https://cdn.jsdelivr.net/npm/ga-lite@2/dist/ga-lite.min.js");
+
+        galite('create', 'G-HFGFGEWD53', 'auto');
+        galite('send', 'pageview');
+    </script>
+    
+<meta name="generator" content="Hexo 5.4.2"></head>
+
+    <body>
+        <header class="header header-fixture">
+    <div class="profile-search-wrap flex sm:block">
+        
+        
+        <div class="profile sm:text-center md:px-1 lg:px-3 sm:pb-4 sm:pt-6">
+            <a id="avatar" role="link" href="https://github.com/juzipeek" class="inline-block lg:w-16 lg:h-16 w-8 h-8 m-2" target="_blank" rel="noopener" rel="noreferrer" >
+                <img src="/images/yellow.jpg" class="rounded-full" alt="avatar">
+            </a>
+            <h2 id="name" class="hidden lg:block">zhou cheng jie</h2>
+            <h3 id="title" class="hidden lg:block">coder</h3>
+            
+            <small id="location" class="hidden lg:block">
+                <i class="iconfont icon-map-icon"></i>
+                BeiJing, China
+            </small>
+            
+        </div>
+        
+        
+<div class="search flex-1 flex lg:inline-block sm:hidden lg:px-4 lg:mt-2 lg:mb-4 lg:w-full">
+    <form id="search-form" class="my-auto flex-1 lg:border lg:border-solid lg:border-gray-200">
+        <div class="input-group table bg-gray-100 lg:bg-white w-full">
+            <input id="search-input" type="text" placeholder="搜索" class="inline-block w-full bg-gray-100 lg:bg-white p-1">
+            <span class="table-cell">
+                <button name="search tigger button" disabled>
+                    <i class="iconfont icon-search m-2"></i>
+                </button>
+            </span>
+        </div>
+    </form>
+        
+<div id="content-json" data-placeholder="搜索" class="invisible hidden">/content.json</div>
+<script id="search-teamplate" type="text/html" data-path="/content.json">
+    <div>
+        <div class="search-header bg-gray-400">
+            <input id="actual-search-input" model="keyword" ref="input" class="inline-block w-full h-10 px-2 py-1" placeholder="搜索" type="text">
+        </div>
+        <div class="search-result bg-gray-200">
+            {{#each searchPosts}}
+            <a href="/{{ path }}" class="result-item block px-2 pb-3 mb-1 pt-1 hover:bg-indigo-100">
+                <i class="iconfont icon-file"></i>
+                <h1 class="result-title inline font-medium text-lg">{{ title }}</h1>
+                <p class="result-content text-gray-600 text-sm">{{{ text }}}</p>
+            </a>
+            {{/each}}
+        </div>
+    </div>
+</script>
+
+</div>
+
+
+        <button name="menu toogle button" id="menu-toggle-btn" class="block sm:hidden p-3" role="button" aria-expanded="false">
+            <i class="iconfont icon-hamburger"></i>
+        </button>
+    </div>
+    <nav id="menu-nav" class="hidden sm:flex flex-col">
+        
+        
+            <div class="menu-item menu-home" role="menuitem">
+                <a href="/.">
+                    <i class="iconfont icon-home" aria-hidden="true"></i>
+                    <span class="menu-title">首页</span>
+                </a>
+            </div>
+        
+        
+            <div class="menu-item menu-archives" role="menuitem">
+                <a href="/archives">
+                    <i class="iconfont icon-archive" aria-hidden="true"></i>
+                    <span class="menu-title">归档</span>
+                </a>
+            </div>
+        
+        
+            <div class="menu-item menu-categories" role="menuitem">
+                <a href="/categories">
+                    <i class="iconfont icon-folder" aria-hidden="true"></i>
+                    <span class="menu-title">分类</span>
+                </a>
+            </div>
+        
+        
+            <div class="menu-item menu-tags" role="menuitem">
+                <a href="/tags">
+                    <i class="iconfont icon-tag" aria-hidden="true"></i>
+                    <span class="menu-title">标签</span>
+                </a>
+            </div>
+        
+        
+            <div class="menu-item menu-about" role="menuitem">
+                <a href="/about">
+                    <i class="iconfont icon-cup" aria-hidden="true"></i>
+                    <span class="menu-title">关于</span>
+                </a>
+            </div>
+        
+        
+<div class="social-links flex sm:flex-col lg:hidden mt-5">
+    
+        <span class="social-item text-center">
+            <a target="_blank" rel="noopener" href="https://github.com/juzipeek">
+                <i class="iconfont social-icon icon-github"></i>
+                <span class="menu-title hidden lg:inline">menu.github</span>
+            </a>
+        </span>
+    
+</div>
+
+
+    </nav>
+</header>
+
+        <section class="main-section">
+            
+    <main class="flex-1 px-4 py-14 md:px-5 lg:px-8 lg:py-4 relative min-h-screen">
+    
+
+    <article class="content article article-archives article-type-list" itemscope="">
+        <header class="article-header">
+            
+    
+        <h1 class="article-title text-lg" itemprop="name">
+            OpenResty Api - control api
+        </h1>
+    
+
+
+
+            <p class="article-meta mb-3 text-xs">
+                <span class="article-date">
+    <i class="iconfont icon-calendar-check"></i>
+	<a href="/2022/09/03/nginx-2019-07-28-openresty-api-control-api/" class="article-date">
+	  <time datetime="2022-09-03T12:55:44.507Z" itemprop="datePublished">9月 3</time>
+	</a>
+</span>
+
+                
+    <span class="article-category">
+    <i class="iconfont icon-folder"></i>
+    <a class="article-category-link" href="/categories/NGINX/">NGINX</a>
+  </span>
+
+
+                
+    <span class="article-tags">
+    <i class="iconfont icon-tag"></i>
+    <a class="article-tag-none-link" href="/tags/C/" rel="tag">C</a>, <a class="article-tag-none-link" href="/tags/Lua/" rel="tag">Lua</a>, <a class="article-tag-none-link" href="/tags/NGINX/" rel="tag">NGINX</a>, <a class="article-tag-none-link" href="/tags/OpenResty/" rel="tag">OpenResty</a>
+  </span>
+
+
+                <span class="_partial/post-comment"><i class="icon icon-comment"></i>
+                    <a href="/2022/09/03/nginx-2019-07-28-openresty-api-control-api/#comments" class="article-comment-link">
+                        评论
+                    </a>
+                </span>
+                
+    
+        <span class="post-wordcount" itemprop="wordCount">字数统计: 1.5k(字)</span>
+    
+    
+        <span class="post-readcount" itemprop="timeRequired">阅读时长: 7(分)</span>
+    
+
+
+            </p>
+        </header>
+        <div class="marked-body article-body">
+            <h2 id="一-概述"><a href="#一-概述" class="headerlink" title="一 概述"></a>一 概述</h2><p><code>ngx.redirect</code> <code>ngx.exec</code> <code>ngx.throw_error</code> <code>ngx.exit</code> <code>ngx.on_abort</code></p>
+<h2 id="二-函数"><a href="#二-函数" class="headerlink" title="二 函数"></a>二 函数</h2><h3 id="1-ngx-redirect"><a href="#1-ngx-redirect" class="headerlink" title="1. ngx.redirect"></a>1. <code>ngx.redirect</code></h3><figure class="highlight lua"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ngx.redirect(uri, <span class="built_in">status</span>?)</span><br></pre></td></tr></table></figure>
+
+<p>可介入的阶段：<code>rewrite_by_lua</code>, <code>access_by_lua</code>, <code>content_by_lua</code></p>
+<p>发出重定向应答，跳转到 <code>uri</code> 参数指定的 <code>uri</code>， <code>HTTP</code> 状态码默认为 <code>302</code>，可以使用可选参数 <code>status</code> 指定状态码。<code>status</code> 可选值为：<code>301</code>、<code>302</code>、<code>303</code>、<code>307</code>、<code>308</code>。<strong>函数调用会终止请求处理</strong>。</p>
+<p>函数实现：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">static</span> <span class="type">int</span></span><br><span class="line"><span class="title function_">ngx_http_lua_ngx_redirect</span><span class="params">(lua_State *L)</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="type">ngx_http_lua_ctx_t</span>          *ctx;</span><br><span class="line">    <span class="type">ngx_int_t</span>                    rc;</span><br><span class="line">    <span class="type">int</span>                          n;</span><br><span class="line">    u_char                      *p;</span><br><span class="line">    u_char                      *uri;</span><br><span class="line">    <span class="type">size_t</span>                       len;</span><br><span class="line">    <span class="type">ngx_table_elt_t</span>             *h;</span><br><span class="line">    <span class="type">ngx_http_request_t</span>          *r;</span><br><span class="line"></span><br><span class="line">    n = lua_gettop(L);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (n != <span class="number">1</span> &amp;&amp; n != <span class="number">2</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span> luaL_error(L, <span class="string">&quot;expecting one or two arguments&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    p = (u_char *) luaL_checklstring(L, <span class="number">1</span>, &amp;len);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (n == <span class="number">2</span>) &#123;</span><br><span class="line">        rc = (<span class="type">ngx_int_t</span>) luaL_checknumber(L, <span class="number">2</span>);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (rc != NGX_HTTP_MOVED_TEMPORARILY</span><br><span class="line">            &amp;&amp; rc != NGX_HTTP_MOVED_PERMANENTLY</span><br><span class="line">            &amp;&amp; rc != NGX_HTTP_SEE_OTHER</span><br><span class="line">            &amp;&amp; rc != NGX_HTTP_PERMANENT_REDIRECT</span><br><span class="line">            &amp;&amp; rc != NGX_HTTP_TEMPORARY_REDIRECT)</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="keyword">return</span> luaL_error(L, <span class="string">&quot;only ngx.HTTP_MOVED_TEMPORARILY, &quot;</span></span><br><span class="line">                              <span class="string">&quot;ngx.HTTP_MOVED_PERMANENTLY, &quot;</span></span><br><span class="line">                              <span class="string">&quot;ngx.HTTP_PERMANENT_REDIRECT, &quot;</span></span><br><span class="line">                              <span class="string">&quot;ngx.HTTP_SEE_OTHER, and &quot;</span></span><br><span class="line">                              <span class="string">&quot;ngx.HTTP_TEMPORARY_REDIRECT are allowed&quot;</span>);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        rc = NGX_HTTP_MOVED_TEMPORARILY;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    r = ngx_http_lua_get_req(L);</span><br><span class="line">    <span class="keyword">if</span> (r == <span class="literal">NULL</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span> luaL_error(L, <span class="string">&quot;no request object found&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    ctx = ngx_http_get_module_ctx(r, ngx_http_lua_module);</span><br><span class="line">    <span class="keyword">if</span> (ctx == <span class="literal">NULL</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span> luaL_error(L, <span class="string">&quot;no request ctx found&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 阶段检查</span></span><br><span class="line">    ngx_http_lua_check_context(L, ctx, NGX_HTTP_LUA_CONTEXT_REWRITE</span><br><span class="line">                               | NGX_HTTP_LUA_CONTEXT_ACCESS</span><br><span class="line">                               | NGX_HTTP_LUA_CONTEXT_CONTENT);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 如果子请求未应答则不能调用 redirect 函数</span></span><br><span class="line">    ngx_http_lua_check_if_abortable(L, ctx);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (r-&gt;header_sent || ctx-&gt;header_sent) &#123;</span><br><span class="line">        <span class="keyword">return</span> luaL_error(L, <span class="string">&quot;attempt to call ngx.redirect after sending out &quot;</span></span><br><span class="line">                          <span class="string">&quot;the headers&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    uri = ngx_palloc(r-&gt;pool, len);</span><br><span class="line">    <span class="keyword">if</span> (uri == <span class="literal">NULL</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span> luaL_error(L, <span class="string">&quot;no memory&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    ngx_memcpy(uri, p, len);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 添加 Location 头，值为 uri</span></span><br><span class="line">    h = ngx_list_push(&amp;r-&gt;headers_out.headers);</span><br><span class="line">    <span class="keyword">if</span> (h == <span class="literal">NULL</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span> luaL_error(L, <span class="string">&quot;no memory&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    h-&gt;hash = ngx_http_lua_location_hash;</span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="keyword">if</span> 0</span></span><br><span class="line">    dd(<span class="string">&quot;location hash: %lu == %lu&quot;</span>,</span><br><span class="line">       (<span class="type">unsigned</span> <span class="type">long</span>) h-&gt;hash,</span><br><span class="line">       (<span class="type">unsigned</span> <span class="type">long</span>) ngx_hash_key_lc((u_char *) <span class="string">&quot;Location&quot;</span>,</span><br><span class="line">                                       <span class="keyword">sizeof</span>(<span class="string">&quot;Location&quot;</span>) - <span class="number">1</span>));</span><br><span class="line"><span class="meta">#<span class="keyword">endif</span></span></span><br><span class="line"></span><br><span class="line">    h-&gt;value.len = len;</span><br><span class="line">    h-&gt;value.data = uri;</span><br><span class="line">    ngx_str_set(&amp;h-&gt;key, <span class="string">&quot;Location&quot;</span>);</span><br><span class="line"></span><br><span class="line">    r-&gt;headers_out.status = rc;</span><br><span class="line"></span><br><span class="line">    ctx-&gt;exit_code = rc;</span><br><span class="line">    ctx-&gt;exited = <span class="number">1</span>;</span><br><span class="line"></span><br><span class="line">    ngx_log_debug2(NGX_LOG_DEBUG_HTTP, r-&gt;connection-&gt;<span class="built_in">log</span>, <span class="number">0</span>,</span><br><span class="line">                   <span class="string">&quot;lua redirect to \&quot;%V\&quot; with code %i&quot;</span>,</span><br><span class="line">                   &amp;h-&gt;value, ctx-&gt;exit_code);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (len &amp;&amp; uri[<span class="number">0</span>] != <span class="string">&#x27;/&#x27;</span>) &#123;</span><br><span class="line">        r-&gt;headers_out.location = h;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/*</span></span><br><span class="line"><span class="comment">     * we do not set r-&gt;headers_out.location here to avoid the handling</span></span><br><span class="line"><span class="comment">     * the local redirects without a host name by ngx_http_header_filter()</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> lua_yield(L, <span class="number">0</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="2-ngx-exec"><a href="#2-ngx-exec" class="headerlink" title="2. ngx.exec"></a>2. <code>ngx.exec</code></h3><figure class="highlight lua"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ngx.exec(uri, args?)</span><br></pre></td></tr></table></figure>
+
+<p>可介入的阶段：<code>rewrite_by_lua</code>, <code>access_by_lua</code>, <code>content_by_lua</code></p>
+<p>执行内部跳转功能，跳转到 <code>uri</code>，使用可选参数 <code>args</code> 可以传递 <code>uri</code> 参数，<code>args</code> 可以是 <code>string</code> 也可以说是 <code>table</code> 类型。支持使用命名 <code>location</code> 作为 <code>uri</code> 参数，但是 <code>args</code> 参数会被忽略。<code>ngx.exec</code> 函数功能由 <code>ngx_http_lua_ngx_exec</code> 函数实现，但是在 <code>ngx_http_lua_ngx_exec</code> 中处理成功后仅设置了 <code>ctx[ngx_http_lua_module]-&gt;exec_uri</code>、<code>ctx[ngx_http_lua_module]-&gt;exec_args</code> 变量，在 <code>ngx_http_lua_run_thread</code> 函数中检测 <code>exec_uri</code> 被设置会调用 <code>ngx_http_lua_handle_exec</code> 函数进行内部跳转。对于命名 <code>location</code> 跳转会直接跳转到 <code>NGX_HTTP_POST_REWRITE_PHASE</code> 阶段进行处理(设置的索引是 <code>NGX_HTTP_REWRITE_PHASE</code> ，会执行下个阶段的处理)，不会经过 <code>NGX_HTTP_FIND_CONFIG_PHASE</code> 阶段进行 <code>location</code> 查找，因此需要在 <code>server&#123;&#125;</code> 内查找好 <code>location</code> 并对请求进行更新。对于非命令 <code>location</code> 的内部跳转，会更新当前请求的 <code>uri</code>，跳转到 <code>NGX_HTTP_FIND_CONFIG_PHASE</code> 阶段进行处理。</p>
+<h3 id="3-ngx-exit"><a href="#3-ngx-exit" class="headerlink" title="3. ngx.exit"></a>3. <code>ngx.exit</code></h3><figure class="highlight lua"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ngx.<span class="built_in">exit</span>(<span class="built_in">status</span>)</span><br></pre></td></tr></table></figure>
+
+<p>可介入的阶段：<code>rewrite_by_lua*</code>, <code>access_by_lua*</code>, <code>content_by_lua*</code>,<code>header_filter_by_lua*</code>, <code>ngx.timer.*</code>, <code>balancer_by_lua*</code>, <code>ssl_certificate_by_lua*</code>, <code>ssl_session_fetch_by_lua*</code>, <code>ssl_session_store_by_lua</code></p>
+<p><code>status &gt;= 200</code> 会中断当前请求的执行，并将 <code>status</code> 作为应答状态码返回，会经过后续的 <code>header_filter</code>、<code>body_filter</code> 阶段。</p>
+<p><code>status == 0</code> 将只会跳过当前阶段的处理函数，继续执行后续阶段的处理函数。</p>
+<p><code>status</code> 取值范围是<a target="_blank" rel="noopener" href="https://github.com/openresty/lua-nginx-module#http-status-constants"><code>HTTP</code> 常量状态码</a>以及 <code>ngx.OK</code>、<code>ngx.ERROR</code>。</p>
+<p><code>ngx_http_lua_ngx_exit</code> 是 <code>ngx.exit</code> 的实现函数，在其中仅将 <code>status</code> 设置到 <code>ctx-&gt;exit_code</code> 中，同时设置 <code>exited</code> 标记。在 <code>ngx_http_lua_run_thread</code> 中检测到 <code>exited</code> 标记后会调用 <code>ngx_http_lua_handle_exit</code> 进行处理。</p>
+<p><strong>TODO：<code>ngx_http_lua_handle_exit</code> 、<code>ngx_http_lua_run_thread</code> 继续跟进</strong></p>
+<h3 id="4-ngx-on-abort"><a href="#4-ngx-on-abort" class="headerlink" title="4. ngx.on_abort"></a>4. <code>ngx.on_abort</code></h3><figure class="highlight lua"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ok, err = ngx.on_abort(callback)</span><br></pre></td></tr></table></figure>
+
+<p>可介入的阶段：<code>rewrite_by_lua*</code>、<code>access_by_lua*</code>、<code>content_by_lua*</code></p>
+<p>将函数 <code>callback</code> 注册为回调函数，当客户端过早关闭（下游）连接时，将自动调用该函数。调用成功返回值为 <code>1</code> 否则返回 <code>nil</code>。回调函数可以决定如何处理客户端的提前关闭事件，可以通过不执行任何操作来简单忽略该事件，并且当前的请求处理程序将继续执行而不会中断。回调函数可以调用 <code>ngx.exit</code> 来终止请求处理。</p>
+<p>当 <code>lua_check_client_abort</code> 指令配置为 <code>off</code> 时调用 <code>ngx.on_abort</code> 会返回 <code>lua_check_client_abort is off</code> 错误提示。</p>
+<p><strong>在一个请求中，此函数只能注册一次</strong>。</p>
+<p>在实现函数 <code>ngx_http_lua_on_abort</code> 中会创建 <code>light thread</code>：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">static</span> <span class="type">int</span></span><br><span class="line"><span class="title function_">ngx_http_lua_on_abort</span><span class="params">(lua_State *L)</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="type">ngx_http_lua_ctx_t</span>           *ctx;</span><br><span class="line">    <span class="type">ngx_http_lua_co_ctx_t</span>        *coctx = <span class="literal">NULL</span>;</span><br><span class="line">		<span class="comment">// ... 省略其他代码</span></span><br><span class="line">    ctx = ngx_http_get_module_ctx(r, ngx_http_lua_module);</span><br><span class="line">    <span class="keyword">if</span> (ctx == <span class="literal">NULL</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span> luaL_error(L, <span class="string">&quot;no request ctx found&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    ngx_http_lua_check_fake_request2(L, r, ctx);</span><br><span class="line">		<span class="comment">// 已经创建过协程</span></span><br><span class="line">    <span class="keyword">if</span> (ctx-&gt;on_abort_co_ctx) &#123;</span><br><span class="line">        lua_pushnil(L);</span><br><span class="line">        lua_pushliteral(L, <span class="string">&quot;duplicate call&quot;</span>);</span><br><span class="line">        <span class="keyword">return</span> <span class="number">2</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">		<span class="comment">// 关闭 lua_check_client_abort 配置</span></span><br><span class="line">    llcf = ngx_http_get_module_loc_conf(r, ngx_http_lua_module);</span><br><span class="line">    <span class="keyword">if</span> (!llcf-&gt;check_client_abort) &#123;</span><br><span class="line">        lua_pushnil(L);</span><br><span class="line">        lua_pushliteral(L, <span class="string">&quot;lua_check_client_abort is off&quot;</span>);</span><br><span class="line">        <span class="keyword">return</span> <span class="number">2</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">		<span class="comment">// 使用回调函数创建协程</span></span><br><span class="line">    ngx_http_lua_coroutine_create_helper(L, r, ctx, &amp;coctx);</span><br><span class="line"></span><br><span class="line">    lua_pushlightuserdata(L, &amp;ngx_http_lua_coroutines_key);</span><br><span class="line">    lua_rawget(L, LUA_REGISTRYINDEX);</span><br><span class="line">    lua_pushvalue(L, <span class="number">-2</span>);</span><br><span class="line"></span><br><span class="line">    dd(<span class="string">&quot;on_wait thread 1: %p&quot;</span>, lua_tothread(L, <span class="number">-1</span>));</span><br><span class="line"></span><br><span class="line">    coctx-&gt;co_ref = luaL_ref(L, <span class="number">-2</span>);</span><br><span class="line">    lua_pop(L, <span class="number">1</span>);</span><br><span class="line"></span><br><span class="line">    coctx-&gt;is_uthread = <span class="number">1</span>;</span><br><span class="line">    <span class="comment">// 保存创建的协程</span></span><br><span class="line">    ctx-&gt;on_abort_co_ctx = coctx;</span><br><span class="line"></span><br><span class="line">    dd(<span class="string">&quot;on_wait thread 2: %p&quot;</span>, coctx-&gt;co);</span><br><span class="line">		<span class="comment">// 协程状态挂起</span></span><br><span class="line">    coctx-&gt;co_status = NGX_HTTP_LUA_CO_SUSPENDED;</span><br><span class="line">    coctx-&gt;parent_co_ctx = ctx-&gt;cur_co_ctx;</span><br><span class="line"></span><br><span class="line">    lua_pushinteger(L, <span class="number">1</span>);</span><br><span class="line">    <span class="keyword">return</span> <span class="number">1</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>在 <code>NGINX</code> 事件处理中，当检测到客户端连接关闭时会调用 <code>ngx_http_lua_rd_check_broken_connection</code> 函数，会将 <code>on_abort</code> 创建的协程设置为处理协程。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">void</span></span><br><span class="line"><span class="title function_">ngx_http_lua_rd_check_broken_connection</span><span class="params">(<span class="type">ngx_http_request_t</span> *r)</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="type">ngx_int_t</span>                   rc;</span><br><span class="line">    <span class="type">ngx_event_t</span>                *rev;</span><br><span class="line">    <span class="type">ngx_http_lua_ctx_t</span>         *ctx;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (r-&gt;done) &#123;</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    rc = ngx_http_lua_check_broken_connection(r, r-&gt;connection-&gt;read);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (rc == NGX_OK) &#123;</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* rc == NGX_ERROR || rc &gt; NGX_OK */</span></span><br><span class="line"></span><br><span class="line">    ctx = ngx_http_get_module_ctx(r, ngx_http_lua_module);</span><br><span class="line">    <span class="keyword">if</span> (ctx == <span class="literal">NULL</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// 未设置 on_abort 函数</span></span><br><span class="line">    <span class="keyword">if</span> (ctx-&gt;on_abort_co_ctx == <span class="literal">NULL</span>) &#123;</span><br><span class="line">        r-&gt;connection-&gt;error = <span class="number">1</span>;</span><br><span class="line">        ngx_http_lua_request_cleanup(ctx, <span class="number">0</span>);</span><br><span class="line">        ngx_http_lua_finalize_request(r, rc);</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">   <span class="comment">// 协程状态必定是 SUSPENDED</span></span><br><span class="line">    <span class="keyword">if</span> (ctx-&gt;on_abort_co_ctx-&gt;co_status != NGX_HTTP_LUA_CO_SUSPENDED) &#123;</span><br><span class="line"></span><br><span class="line">        <span class="comment">/* on_abort already run for the current request handler */</span></span><br><span class="line"></span><br><span class="line">        rev = r-&gt;connection-&gt;read;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> ((ngx_event_flags &amp; NGX_USE_LEVEL_EVENT) &amp;&amp; rev-&gt;active) &#123;</span><br><span class="line">            <span class="keyword">if</span> (ngx_del_event(rev, NGX_READ_EVENT, <span class="number">0</span>) != NGX_OK) &#123;</span><br><span class="line">                ngx_http_lua_request_cleanup(ctx, <span class="number">0</span>);</span><br><span class="line">                ngx_http_lua_finalize_request(r,</span><br><span class="line">                                              NGX_HTTP_INTERNAL_SERVER_ERROR);</span><br><span class="line">                <span class="keyword">return</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    ctx-&gt;uthreads++;</span><br><span class="line">    ctx-&gt;resume_handler = ngx_http_lua_on_abort_resume;</span><br><span class="line">    ctx-&gt;on_abort_co_ctx-&gt;co_status = NGX_HTTP_LUA_CO_RUNNING;</span><br><span class="line">    <span class="comment">// 处理协程是 on_abort 协程</span></span><br><span class="line">    ctx-&gt;cur_co_ctx = ctx-&gt;on_abort_co_ctx;</span><br><span class="line"></span><br><span class="line">    ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r-&gt;connection-&gt;<span class="built_in">log</span>, <span class="number">0</span>,</span><br><span class="line">                   <span class="string">&quot;lua waking up the on_abort callback thread&quot;</span>);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (ctx-&gt;entered_content_phase) &#123;</span><br><span class="line">        r-&gt;write_event_handler = ngx_http_lua_content_wev_handler;</span><br><span class="line"></span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        r-&gt;write_event_handler = ngx_http_core_run_phases;</span><br><span class="line">    &#125;</span><br><span class="line">		<span class="comment">// 触发写事件处理</span></span><br><span class="line">    r-&gt;write_event_handler(r);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+        </div>
+        
+
+    </article>
+    
+    <section id="comments">
+        
+    </section>
+
+
+    
+
+</main>
+
+
+<aside style="" id="sidebar" class="aside aside-fixture">
+    <div class="toc-sidebar">
+        <nav id="toc" class="article-toc">
+            <h3 class="toc-title">文章目录</h3>
+            <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80-%E6%A6%82%E8%BF%B0"><span class="toc-number">1.</span> <span class="toc-text">一 概述</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C-%E5%87%BD%E6%95%B0"><span class="toc-number">2.</span> <span class="toc-text">二 函数</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-ngx-redirect"><span class="toc-number">2.1.</span> <span class="toc-text">1. ngx.redirect</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-ngx-exec"><span class="toc-number">2.2.</span> <span class="toc-text">2. ngx.exec</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-ngx-exit"><span class="toc-number">2.3.</span> <span class="toc-text">3. ngx.exit</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-ngx-on-abort"><span class="toc-number">2.4.</span> <span class="toc-text">4. ngx.on_abort</span></a></li></ol></li></ol>
+        </nav>
+    </div>
+</aside>
+
+
+
+
+
+        </section>
+        <footer class="hidden lg:block fixed bottom-0 left-0 sm:w-1/12 lg:w-1/6 bg-gray-100 z-40">
+    
+    <div class="footer-social-links">
+        
+            <a target="_blank" rel="noopener" href="https://github.com/juzipeek">
+                <i class="iconfont icon-github"></i>
+            </a>
+        
+    </div>
+    
+    
+</footer>
+
+        <div id="mask" class="hidden mask fixed inset-0 bg-gray-900 opacity-75 z-40"></div>
+        <div id="search-view-container" class="hidden shadow-xl"></div>
+        
+<script src="/js/dom-event.min.js"></script>
+
+
+
+<script src="/js/local-search.min.js"></script>
+
+
+
+    <script src="//cdn.jsdelivr.net/npm/lightgallery.js@1.1.3/dist/js/lightgallery.min.js"></script>
+    
+<script src="/js/light-gallery.min.js"></script>
+
+
+
+
+
+
+    </body>
+</html>

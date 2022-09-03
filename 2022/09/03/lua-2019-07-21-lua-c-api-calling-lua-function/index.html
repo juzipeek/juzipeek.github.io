@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html  lang="zh-CN" >
+    <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, minimum-scale=1, initial-scale=1, maximum-scale=5, viewport-fit=cover">
+    <title>lua c api - calling lua function | 自留地</title>
+    <meta name="description" content="一 概述很多情况下有这种需求：在特定的框架中针对不同的业务做少量修改。使用 C&#x2F;C++ 开发稳定的框架，调用针对不同业务开发的 Lua 函数可以实现需求。其实从 C&#x2F;C++ 调用 Lua 函数非常简单，调用时将 Lua 函数压入栈、将函数参数压入栈，调用 lua_pcall 完成调用；调用后从栈获得调用函数返回结果。 二 示例1. 程序示例12345678910111213141516171819">
+<meta property="og:type" content="article">
+<meta property="og:title" content="lua c api - calling lua function">
+<meta property="og:url" content="https://juzipeek.github.io/2022/09/03/lua-2019-07-21-lua-c-api-calling-lua-function/index.html">
+<meta property="og:site_name" content="自留地">
+<meta property="og:description" content="一 概述很多情况下有这种需求：在特定的框架中针对不同的业务做少量修改。使用 C&#x2F;C++ 开发稳定的框架，调用针对不同业务开发的 Lua 函数可以实现需求。其实从 C&#x2F;C++ 调用 Lua 函数非常简单，调用时将 Lua 函数压入栈、将函数参数压入栈，调用 lua_pcall 完成调用；调用后从栈获得调用函数返回结果。 二 示例1. 程序示例12345678910111213141516171819">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2022-09-03T14:47:43.663Z">
+<meta property="article:modified_time" content="2022-09-03T14:51:04.409Z">
+<meta property="article:author" content="zhou cheng jie">
+<meta property="article:tag" content="C">
+<meta property="article:tag" content="Lua">
+<meta name="twitter:card" content="summary">
+
+    
+    <link rel="icon" href="/images/favicon.ico" type="image/x-icon">
+
+    
+<link rel="stylesheet" href="/css/common.min.css">
+
+
+
+    
+    
+    
+    
+        <link href="//cdn.jsdelivr.net/npm/lightgallery.js@1.1.3/dist/css/lightgallery.min.css" rel="stylesheet">
+    
+    
+    
+<link rel="stylesheet" href="/css/iconfont.min.css">
+
+    
+    <script>
+        (function(e,t,n,i,s,a,c){e[n]=e[n]||function(){(e[n].q=e[n].q||[]).push(arguments)}
+        ;a=t.createElement(i);c=t.getElementsByTagName(i)[0];a.async=true;a.src=s
+        ;c.parentNode.insertBefore(a,c)
+        })(window,document,"galite","script","https://cdn.jsdelivr.net/npm/ga-lite@2/dist/ga-lite.min.js");
+
+        galite('create', 'G-HFGFGEWD53', 'auto');
+        galite('send', 'pageview');
+    </script>
+    
+<meta name="generator" content="Hexo 5.4.2"></head>
+
+    <body>
+        <header class="header header-fixture">
+    <div class="profile-search-wrap flex sm:block">
+        
+        
+        <div class="profile sm:text-center md:px-1 lg:px-3 sm:pb-4 sm:pt-6">
+            <a id="avatar" role="link" href="https://github.com/juzipeek" class="inline-block lg:w-16 lg:h-16 w-8 h-8 m-2" target="_blank" rel="noopener" rel="noreferrer" >
+                <img src="/images/yellow.jpg" class="rounded-full" alt="avatar">
+            </a>
+            <h2 id="name" class="hidden lg:block">zhou cheng jie</h2>
+            <h3 id="title" class="hidden lg:block">coder</h3>
+            
+            <small id="location" class="hidden lg:block">
+                <i class="iconfont icon-map-icon"></i>
+                BeiJing, China
+            </small>
+            
+        </div>
+        
+        
+<div class="search flex-1 flex lg:inline-block sm:hidden lg:px-4 lg:mt-2 lg:mb-4 lg:w-full">
+    <form id="search-form" class="my-auto flex-1 lg:border lg:border-solid lg:border-gray-200">
+        <div class="input-group table bg-gray-100 lg:bg-white w-full">
+            <input id="search-input" type="text" placeholder="搜索" class="inline-block w-full bg-gray-100 lg:bg-white p-1">
+            <span class="table-cell">
+                <button name="search tigger button" disabled>
+                    <i class="iconfont icon-search m-2"></i>
+                </button>
+            </span>
+        </div>
+    </form>
+        
+<div id="content-json" data-placeholder="搜索" class="invisible hidden">/content.json</div>
+<script id="search-teamplate" type="text/html" data-path="/content.json">
+    <div>
+        <div class="search-header bg-gray-400">
+            <input id="actual-search-input" model="keyword" ref="input" class="inline-block w-full h-10 px-2 py-1" placeholder="搜索" type="text">
+        </div>
+        <div class="search-result bg-gray-200">
+            {{#each searchPosts}}
+            <a href="/{{ path }}" class="result-item block px-2 pb-3 mb-1 pt-1 hover:bg-indigo-100">
+                <i class="iconfont icon-file"></i>
+                <h1 class="result-title inline font-medium text-lg">{{ title }}</h1>
+                <p class="result-content text-gray-600 text-sm">{{{ text }}}</p>
+            </a>
+            {{/each}}
+        </div>
+    </div>
+</script>
+
+</div>
+
+
+        <button name="menu toogle button" id="menu-toggle-btn" class="block sm:hidden p-3" role="button" aria-expanded="false">
+            <i class="iconfont icon-hamburger"></i>
+        </button>
+    </div>
+    <nav id="menu-nav" class="hidden sm:flex flex-col">
+        
+        
+            <div class="menu-item menu-home" role="menuitem">
+                <a href="/.">
+                    <i class="iconfont icon-home" aria-hidden="true"></i>
+                    <span class="menu-title">首页</span>
+                </a>
+            </div>
+        
+        
+            <div class="menu-item menu-archives" role="menuitem">
+                <a href="/archives">
+                    <i class="iconfont icon-archive" aria-hidden="true"></i>
+                    <span class="menu-title">归档</span>
+                </a>
+            </div>
+        
+        
+            <div class="menu-item menu-categories" role="menuitem">
+                <a href="/categories">
+                    <i class="iconfont icon-folder" aria-hidden="true"></i>
+                    <span class="menu-title">分类</span>
+                </a>
+            </div>
+        
+        
+            <div class="menu-item menu-tags" role="menuitem">
+                <a href="/tags">
+                    <i class="iconfont icon-tag" aria-hidden="true"></i>
+                    <span class="menu-title">标签</span>
+                </a>
+            </div>
+        
+        
+            <div class="menu-item menu-about" role="menuitem">
+                <a href="/about">
+                    <i class="iconfont icon-cup" aria-hidden="true"></i>
+                    <span class="menu-title">关于</span>
+                </a>
+            </div>
+        
+        
+<div class="social-links flex sm:flex-col lg:hidden mt-5">
+    
+        <span class="social-item text-center">
+            <a target="_blank" rel="noopener" href="https://github.com/juzipeek">
+                <i class="iconfont social-icon icon-github"></i>
+                <span class="menu-title hidden lg:inline">menu.github</span>
+            </a>
+        </span>
+    
+</div>
+
+
+    </nav>
+</header>
+
+        <section class="main-section">
+            
+    <main class="flex-1 px-4 py-14 md:px-5 lg:px-8 lg:py-4 relative min-h-screen">
+    
+
+    <article class="content article article-archives article-type-list" itemscope="">
+        <header class="article-header">
+            
+    
+        <h1 class="article-title text-lg" itemprop="name">
+            lua c api - calling lua function
+        </h1>
+    
+
+
+
+            <p class="article-meta mb-3 text-xs">
+                <span class="article-date">
+    <i class="iconfont icon-calendar-check"></i>
+	<a href="/2022/09/03/lua-2019-07-21-lua-c-api-calling-lua-function/" class="article-date">
+	  <time datetime="2022-09-03T14:47:43.663Z" itemprop="datePublished">9月 3</time>
+	</a>
+</span>
+
+                
+    <span class="article-category">
+    <i class="iconfont icon-folder"></i>
+    <a class="article-category-link" href="/categories/Lua/">Lua</a>
+  </span>
+
+
+                
+    <span class="article-tags">
+    <i class="iconfont icon-tag"></i>
+    <a class="article-tag-none-link" href="/tags/C/" rel="tag">C</a>, <a class="article-tag-none-link" href="/tags/Lua/" rel="tag">Lua</a>
+  </span>
+
+
+                <span class="_partial/post-comment"><i class="icon icon-comment"></i>
+                    <a href="/2022/09/03/lua-2019-07-21-lua-c-api-calling-lua-function/#comments" class="article-comment-link">
+                        评论
+                    </a>
+                </span>
+                
+    
+        <span class="post-wordcount" itemprop="wordCount">字数统计: 940(字)</span>
+    
+    
+        <span class="post-readcount" itemprop="timeRequired">阅读时长: 4(分)</span>
+    
+
+
+            </p>
+        </header>
+        <div class="marked-body article-body">
+            <h2 id="一-概述"><a href="#一-概述" class="headerlink" title="一 概述"></a>一 概述</h2><p>很多情况下有这种需求：在特定的框架中针对不同的业务做少量修改。使用 <code>C/C++</code> 开发稳定的框架，调用针对不同业务开发的 <code>Lua</code> 函数可以实现需求。其实从 <code>C/C++</code> 调用 <code>Lua</code> 函数非常简单，<strong>调用时将 <code>Lua</code> 函数压入栈、将函数参数压入栈，调用 <code>lua_pcall</code> 完成调用；调用后从栈获得调用函数返回结果</strong>。</p>
+<h2 id="二-示例"><a href="#二-示例" class="headerlink" title="二 示例"></a>二 示例</h2><h3 id="1-程序示例"><a href="#1-程序示例" class="headerlink" title="1. 程序示例"></a>1. 程序示例</h3><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;stdio.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;stdlib.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;unistd.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;string.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&quot;lua.h&quot;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&quot;lauxlib.h&quot;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&quot;lualib.h&quot;</span></span></span><br><span class="line"></span><br><span class="line"><span class="comment">/******************************************************************************</span></span><br><span class="line"><span class="comment"> * 函数结构体定义</span></span><br><span class="line"><span class="comment"> ******************************************************************************/</span></span><br><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">function_buf_s</span> &#123;</span></span><br><span class="line">    <span class="type">char</span> *name;  <span class="comment">// 函数名</span></span><br><span class="line">    <span class="type">int</span> nargs;   <span class="comment">// 参数数量</span></span><br><span class="line">    <span class="type">int</span> nret;    <span class="comment">// 返回值数量</span></span><br><span class="line">    <span class="type">char</span> *chunk; <span class="comment">// 函数体</span></span><br><span class="line">&#125; function_buf;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 此处 function 不应该使用 function f() ... end 方式编写，写出的函数其实不会被执行</span></span><br><span class="line"><span class="type">static</span> function_buf </span><br><span class="line">lua_function[] = &#123;</span><br><span class="line">    &#123;<span class="string">&quot;sayhi&quot;</span>, <span class="number">1</span>, <span class="number">1</span>,</span><br><span class="line">     <span class="string">&quot;local name = ...\n&quot;</span></span><br><span class="line">     <span class="string">&quot;return string.format(&#x27;hi %s!&#x27;, name)\n&quot;</span></span><br><span class="line">    &#125;,</span><br><span class="line">    &#123;<span class="string">&quot;echo&quot;</span>, <span class="number">1</span>, <span class="number">1</span>,</span><br><span class="line">     <span class="string">&quot;function echo(msg)\n&quot;</span></span><br><span class="line">     <span class="string">&quot;    return msg\n&quot;</span></span><br><span class="line">     <span class="string">&quot;end\n&quot;</span></span><br><span class="line">     <span class="string">&quot;local msg = ...\n&quot;</span></span><br><span class="line">     <span class="string">&quot;return echo(msg)\n&quot;</span></span><br><span class="line">    &#125;,</span><br><span class="line">    &#123;<span class="literal">NULL</span>, <span class="number">0</span>, <span class="number">0</span>,<span class="literal">NULL</span>&#125;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="type">static</span> <span class="type">int</span> </span><br><span class="line"><span class="title function_">sayHi</span><span class="params">(lua_State *L)</span> &#123;</span><br><span class="line"></span><br><span class="line">    function_buf *function = &amp;lua_function[<span class="number">0</span>];</span><br><span class="line">    </span><br><span class="line">    <span class="type">int</span> ret = luaL_loadbuffer(L, function-&gt;chunk, <span class="built_in">strlen</span>(function-&gt;chunk), </span><br><span class="line">                              function-&gt;name);</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">if</span> (ret) &#123;</span><br><span class="line">        <span class="keyword">return</span> luaL_error(L, <span class="string">&quot;call loadbuffer fail ret:%d, code:%s&quot;</span>, </span><br><span class="line">                          ret, function-&gt;chunk);</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    lua_pushstring(L, <span class="string">&quot;lua&quot;</span>);</span><br><span class="line">    ret = lua_pcall(L, <span class="number">1</span>, <span class="number">1</span>, <span class="number">0</span>);</span><br><span class="line">    <span class="keyword">if</span> (ret != <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span> luaL_error(L, <span class="string">&quot;lua_pcall fail ret:%d %s&quot;</span>, </span><br><span class="line">                          ret, lua_tostring(L, <span class="number">-1</span>));</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 输出类型</span></span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;typename %s\n&quot;</span>, luaL_typename(L, <span class="number">-1</span>));</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (!lua_isstring(L, <span class="number">-1</span>)) &#123;</span><br><span class="line">        <span class="keyword">return</span> luaL_error(L, <span class="string">&quot;lua_pcall ret not string&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 函数执行结果在栈中，取出来再放入栈</span></span><br><span class="line">    <span class="type">const</span> <span class="type">char</span> *msg = lua_tostring(L, <span class="number">-1</span>);</span><br><span class="line">    lua_pop(L, <span class="number">-1</span>);</span><br><span class="line">    lua_pushfstring(L, <span class="string">&quot;sayhi say:%s&quot;</span>, msg);</span><br><span class="line">    <span class="keyword">return</span> <span class="number">1</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">/******************************************************************************</span></span><br><span class="line"><span class="comment"> * 通用入口函数</span></span><br><span class="line"><span class="comment"> * 调用时首先将函数名压入栈，之后是其他参数</span></span><br><span class="line"><span class="comment"> ******************************************************************************/</span></span><br><span class="line"><span class="type">static</span> <span class="type">int</span></span><br><span class="line"><span class="title function_">common_entry</span><span class="params">(lua_State *L)</span> &#123;</span><br><span class="line">    <span class="keyword">if</span> (!lua_isstring(L, <span class="number">1</span>)) &#123;</span><br><span class="line">        <span class="keyword">return</span> luaL_error(L, <span class="string">&quot;first arg should be function name, string type&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="type">const</span> <span class="type">char</span> * function_name = lua_tostring(L, <span class="number">1</span>);</span><br><span class="line">    </span><br><span class="line">    function_buf *function = lua_function;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">for</span> (;function-&gt;name; function++) &#123;</span><br><span class="line">        <span class="keyword">if</span> (!<span class="built_in">strcmp</span>(function-&gt;name, function_name)) <span class="keyword">break</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (!function-&gt;name) &#123;</span><br><span class="line">        <span class="keyword">return</span> luaL_error(L, <span class="string">&quot;not found:%s function in array&quot;</span>, function_name);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="type">int</span> ret = luaL_loadbuffer(L, function-&gt;chunk, <span class="built_in">strlen</span>(function-&gt;chunk), </span><br><span class="line">                              function-&gt;name);</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">if</span> (ret) &#123;</span><br><span class="line">        <span class="keyword">return</span> luaL_error(L, <span class="string">&quot;call loadbuffer fail ret:%d, code:%s&quot;</span>, </span><br><span class="line">                          ret, function-&gt;chunk);</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="type">int</span> i;</span><br><span class="line">    <span class="keyword">for</span>(i=<span class="number">2</span>; i &lt;= function-&gt;nargs+<span class="number">1</span>; i++) &#123;</span><br><span class="line">        lua_pushstring(L, lua_tostring(L, i));</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    ret = lua_pcall(L, function-&gt;nargs, function-&gt;nret, <span class="number">0</span>);</span><br><span class="line">    <span class="keyword">if</span> (ret != <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span> luaL_error(L, <span class="string">&quot;lua_pcall fail ret:%d %s&quot;</span>, </span><br><span class="line">                          ret, lua_tostring(L, <span class="number">-1</span>));</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="type">int</span> nret = function-&gt;nret;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">for</span> (i=<span class="number">-1</span>; i &gt;= -nret; i--)&#123;</span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">&quot;ret:%d is:%s\n&quot;</span>, -i, lua_tostring(L, i));</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">return</span> nret;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="type">static</span> <span class="type">const</span> </span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">luaL_reg</span> <span class="title">call_function_lib</span>[] =</span> &#123;</span><br><span class="line">    &#123;<span class="string">&quot;sayHi&quot;</span>, sayHi&#125;,</span><br><span class="line">    &#123;<span class="string">&quot;common_entry&quot;</span>, common_entry&#125;,</span><br><span class="line">    &#123;<span class="literal">NULL</span>, <span class="literal">NULL</span>&#125;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="comment">/******************************************************************************</span></span><br><span class="line"><span class="comment">* 注册函数</span></span><br><span class="line"><span class="comment">******************************************************************************/</span></span><br><span class="line"><span class="type">int</span> </span><br><span class="line"><span class="title function_">luaopen_call_function</span><span class="params">(lua_State *l)</span> &#123;</span><br><span class="line">    luaL_openlib(l, <span class="string">&quot;call_function&quot;</span>, call_function_lib, <span class="number">0</span>);</span><br><span class="line">    <span class="keyword">return</span> <span class="number">1</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>程序中有两个示例，<code>sayHi</code> 函数接收一个 <code>string</code> 参数并返回一个 <code>string</code> 参数；<code>common_entry</code> 函数可以根据函数名选择相应的函数体进行执行，更加灵活。</p>
+<p><strong>在函数定义中需要注意，<code>luaL_loadbuffer</code> 系列函数会将字符串当做程序段载入并放在栈顶，但是并未执行函数。如果载入的代码段是 <code>function f()…end</code> 格式，使用 <code>lua_pcall</code> 调用代码段时函数 <code>f</code> 仅做了定义，未执行函数体。</strong></p>
+<h3 id="2-调用示例"><a href="#2-调用示例" class="headerlink" title="2. 调用示例"></a>2. 调用示例</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">$ /usr/local/lua5.1.5/bin/lua -e <span class="string">&quot;require &#x27;call_function&#x27;; ret = call_function.sayHi(&#x27;lua&#x27;); print(ret)&quot;</span></span><br><span class="line">typename string</span><br><span class="line">sayhi say:hi lua!</span><br><span class="line"></span><br><span class="line">$ /usr/local/lua5.1.5/bin/lua -e <span class="string">&quot;require &#x27;call_function&#x27;; ret = call_function.common_entry(&#x27;echo&#x27;,&#x27;lua is cool&#x27;); print(ret)&quot;</span></span><br><span class="line">ret:1 is:lua is cool</span><br><span class="line">lua is cool</span><br></pre></td></tr></table></figure>
+
+<h2 id="三-函数说明"><a href="#三-函数说明" class="headerlink" title="三 函数说明"></a>三 函数说明</h2><h3 id="1-luaL-error"><a href="#1-luaL-error" class="headerlink" title="1. luaL_error"></a>1. <code>luaL_error</code></h3><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">int</span> <span class="title function_">luaL_error</span> <span class="params">(lua_State *L, <span class="type">const</span> <span class="type">char</span> *fmt, ...)</span>;</span><br></pre></td></tr></table></figure>
+
+<p>触发错误，并使用 <code>fmt</code> 与后续参数格式化输出错误消息字符串。<code>luaL_error</code> 函数并不会退出，通常的是否用法为：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">return</span> luaL_error(args);</span><br></pre></td></tr></table></figure>
+
+<h2 id="四-参考资料"><a href="#四-参考资料" class="headerlink" title="四 参考资料"></a>四 参考资料</h2><p>-<a target="_blank" rel="noopener" href="https://www.lua.org/pil/25.2.html">programming in lua</a></p>
+<p>-<a target="_blank" rel="noopener" href="https://www.lua.org/manual/5.1/manual.html#luaL_loadbuffer">lua 5.1 手册</a></p>
+
+        </div>
+        
+
+    </article>
+    
+    <section id="comments">
+        
+    </section>
+
+
+    
+
+</main>
+
+
+<aside style="" id="sidebar" class="aside aside-fixture">
+    <div class="toc-sidebar">
+        <nav id="toc" class="article-toc">
+            <h3 class="toc-title">文章目录</h3>
+            <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80-%E6%A6%82%E8%BF%B0"><span class="toc-number">1.</span> <span class="toc-text">一 概述</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C-%E7%A4%BA%E4%BE%8B"><span class="toc-number">2.</span> <span class="toc-text">二 示例</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-%E7%A8%8B%E5%BA%8F%E7%A4%BA%E4%BE%8B"><span class="toc-number">2.1.</span> <span class="toc-text">1. 程序示例</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E8%B0%83%E7%94%A8%E7%A4%BA%E4%BE%8B"><span class="toc-number">2.2.</span> <span class="toc-text">2. 调用示例</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89-%E5%87%BD%E6%95%B0%E8%AF%B4%E6%98%8E"><span class="toc-number">3.</span> <span class="toc-text">三 函数说明</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-luaL-error"><span class="toc-number">3.1.</span> <span class="toc-text">1. luaL_error</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9B%9B-%E5%8F%82%E8%80%83%E8%B5%84%E6%96%99"><span class="toc-number">4.</span> <span class="toc-text">四 参考资料</span></a></li></ol>
+        </nav>
+    </div>
+</aside>
+
+
+
+
+
+        </section>
+        <footer class="hidden lg:block fixed bottom-0 left-0 sm:w-1/12 lg:w-1/6 bg-gray-100 z-40">
+    
+    <div class="footer-social-links">
+        
+            <a target="_blank" rel="noopener" href="https://github.com/juzipeek">
+                <i class="iconfont icon-github"></i>
+            </a>
+        
+    </div>
+    
+    
+</footer>
+
+        <div id="mask" class="hidden mask fixed inset-0 bg-gray-900 opacity-75 z-40"></div>
+        <div id="search-view-container" class="hidden shadow-xl"></div>
+        
+<script src="/js/dom-event.min.js"></script>
+
+
+
+<script src="/js/local-search.min.js"></script>
+
+
+
+    <script src="//cdn.jsdelivr.net/npm/lightgallery.js@1.1.3/dist/js/lightgallery.min.js"></script>
+    
+<script src="/js/light-gallery.min.js"></script>
+
+
+
+
+
+
+    </body>
+</html>

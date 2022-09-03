@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html  lang="zh-CN" >
+    <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, minimum-scale=1, initial-scale=1, maximum-scale=5, viewport-fit=cover">
+    <title>Working with Data Types | 自留地</title>
+    <meta name="description" content="GOA Design Language">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Working with Data Types">
+<meta property="og:url" content="https://juzipeek.github.io/2022/09/03/about-go-2018-12-13-Working-with-Data-Types/index.html">
+<meta property="og:site_name" content="自留地">
+<meta property="og:description" content="GOA Design Language">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2022-09-03T14:47:35.231Z">
+<meta property="article:modified_time" content="2022-09-03T14:55:13.610Z">
+<meta property="article:author" content="zhou cheng jie">
+<meta property="article:tag" content="Go">
+<meta name="twitter:card" content="summary">
+
+    
+    <link rel="icon" href="/images/favicon.ico" type="image/x-icon">
+
+    
+<link rel="stylesheet" href="/css/common.min.css">
+
+
+
+    
+    
+    
+    
+        <link href="//cdn.jsdelivr.net/npm/lightgallery.js@1.1.3/dist/css/lightgallery.min.css" rel="stylesheet">
+    
+    
+    
+<link rel="stylesheet" href="/css/iconfont.min.css">
+
+    
+    <script>
+        (function(e,t,n,i,s,a,c){e[n]=e[n]||function(){(e[n].q=e[n].q||[]).push(arguments)}
+        ;a=t.createElement(i);c=t.getElementsByTagName(i)[0];a.async=true;a.src=s
+        ;c.parentNode.insertBefore(a,c)
+        })(window,document,"galite","script","https://cdn.jsdelivr.net/npm/ga-lite@2/dist/ga-lite.min.js");
+
+        galite('create', 'G-HFGFGEWD53', 'auto');
+        galite('send', 'pageview');
+    </script>
+    
+<meta name="generator" content="Hexo 5.4.2"></head>
+
+    <body>
+        <header class="header header-fixture">
+    <div class="profile-search-wrap flex sm:block">
+        
+        
+        <div class="profile sm:text-center md:px-1 lg:px-3 sm:pb-4 sm:pt-6">
+            <a id="avatar" role="link" href="https://github.com/juzipeek" class="inline-block lg:w-16 lg:h-16 w-8 h-8 m-2" target="_blank" rel="noopener" rel="noreferrer" >
+                <img src="/images/yellow.jpg" class="rounded-full" alt="avatar">
+            </a>
+            <h2 id="name" class="hidden lg:block">zhou cheng jie</h2>
+            <h3 id="title" class="hidden lg:block">coder</h3>
+            
+            <small id="location" class="hidden lg:block">
+                <i class="iconfont icon-map-icon"></i>
+                BeiJing, China
+            </small>
+            
+        </div>
+        
+        
+<div class="search flex-1 flex lg:inline-block sm:hidden lg:px-4 lg:mt-2 lg:mb-4 lg:w-full">
+    <form id="search-form" class="my-auto flex-1 lg:border lg:border-solid lg:border-gray-200">
+        <div class="input-group table bg-gray-100 lg:bg-white w-full">
+            <input id="search-input" type="text" placeholder="搜索" class="inline-block w-full bg-gray-100 lg:bg-white p-1">
+            <span class="table-cell">
+                <button name="search tigger button" disabled>
+                    <i class="iconfont icon-search m-2"></i>
+                </button>
+            </span>
+        </div>
+    </form>
+        
+<div id="content-json" data-placeholder="搜索" class="invisible hidden">/content.json</div>
+<script id="search-teamplate" type="text/html" data-path="/content.json">
+    <div>
+        <div class="search-header bg-gray-400">
+            <input id="actual-search-input" model="keyword" ref="input" class="inline-block w-full h-10 px-2 py-1" placeholder="搜索" type="text">
+        </div>
+        <div class="search-result bg-gray-200">
+            {{#each searchPosts}}
+            <a href="/{{ path }}" class="result-item block px-2 pb-3 mb-1 pt-1 hover:bg-indigo-100">
+                <i class="iconfont icon-file"></i>
+                <h1 class="result-title inline font-medium text-lg">{{ title }}</h1>
+                <p class="result-content text-gray-600 text-sm">{{{ text }}}</p>
+            </a>
+            {{/each}}
+        </div>
+    </div>
+</script>
+
+</div>
+
+
+        <button name="menu toogle button" id="menu-toggle-btn" class="block sm:hidden p-3" role="button" aria-expanded="false">
+            <i class="iconfont icon-hamburger"></i>
+        </button>
+    </div>
+    <nav id="menu-nav" class="hidden sm:flex flex-col">
+        
+        
+            <div class="menu-item menu-home" role="menuitem">
+                <a href="/.">
+                    <i class="iconfont icon-home" aria-hidden="true"></i>
+                    <span class="menu-title">首页</span>
+                </a>
+            </div>
+        
+        
+            <div class="menu-item menu-archives" role="menuitem">
+                <a href="/archives">
+                    <i class="iconfont icon-archive" aria-hidden="true"></i>
+                    <span class="menu-title">归档</span>
+                </a>
+            </div>
+        
+        
+            <div class="menu-item menu-categories" role="menuitem">
+                <a href="/categories">
+                    <i class="iconfont icon-folder" aria-hidden="true"></i>
+                    <span class="menu-title">分类</span>
+                </a>
+            </div>
+        
+        
+            <div class="menu-item menu-tags" role="menuitem">
+                <a href="/tags">
+                    <i class="iconfont icon-tag" aria-hidden="true"></i>
+                    <span class="menu-title">标签</span>
+                </a>
+            </div>
+        
+        
+            <div class="menu-item menu-about" role="menuitem">
+                <a href="/about">
+                    <i class="iconfont icon-cup" aria-hidden="true"></i>
+                    <span class="menu-title">关于</span>
+                </a>
+            </div>
+        
+        
+<div class="social-links flex sm:flex-col lg:hidden mt-5">
+    
+        <span class="social-item text-center">
+            <a target="_blank" rel="noopener" href="https://github.com/juzipeek">
+                <i class="iconfont social-icon icon-github"></i>
+                <span class="menu-title hidden lg:inline">menu.github</span>
+            </a>
+        </span>
+    
+</div>
+
+
+    </nav>
+</header>
+
+        <section class="main-section">
+            
+    <main class="flex-1 px-4 py-14 md:px-5 lg:px-8 lg:py-4 relative min-h-screen">
+    
+
+    <article class="content article article-archives article-type-list" itemscope="">
+        <header class="article-header">
+            
+    
+        <h1 class="article-title text-lg" itemprop="name">
+            Working with Data Types
+        </h1>
+    
+
+
+
+            <p class="article-meta mb-3 text-xs">
+                <span class="article-date">
+    <i class="iconfont icon-calendar-check"></i>
+	<a href="/2022/09/03/about-go-2018-12-13-Working-with-Data-Types/" class="article-date">
+	  <time datetime="2022-09-03T14:47:35.231Z" itemprop="datePublished">9月 3</time>
+	</a>
+</span>
+
+                
+    <span class="article-category">
+    <i class="iconfont icon-folder"></i>
+    <a class="article-category-link" href="/categories/Go/">Go</a>
+  </span>
+
+
+                
+    <span class="article-tags">
+    <i class="iconfont icon-tag"></i>
+    <a class="article-tag-none-link" href="/tags/Go/" rel="tag">Go</a>
+  </span>
+
+
+                <span class="_partial/post-comment"><i class="icon icon-comment"></i>
+                    <a href="/2022/09/03/about-go-2018-12-13-Working-with-Data-Types/#comments" class="article-comment-link">
+                        评论
+                    </a>
+                </span>
+                
+    
+        <span class="post-wordcount" itemprop="wordCount">字数统计: 1.6k(字)</span>
+    
+    
+        <span class="post-readcount" itemprop="timeRequired">阅读时长: 6(分)</span>
+    
+
+
+            </p>
+        </header>
+        <div class="marked-body article-body">
+            <h2 id="1-概述"><a href="#1-概述" class="headerlink" title="1. 概述"></a>1. 概述</h2><p>goa DSL 的一个重要方面在于如何定义和使用类型。<a target="_blank" rel="noopener" href="https://goa.design/design/overview/">概述</a>介绍了使用类型和媒体类型的基础知识，本文档退后一步，解释了 DSL 的基本原理。</p>
+<p>设计中使用 Attribute 函数或其别名之一（Member，Header 或 Param）描述数据结构。这种描述客观存在 - 即它与给定语言（例如Go）或技术无关。这使得可以生成许多输出，范围从 Go 代码到 JSON 格式和 Swagger 形式的文档或绑定到其他语言（例如 JavaScript 客户端）。DSL 包括概述中列出的许多基本类型，但也可以通过 <code>Type</code> 函数递归地描述任意数据结构。</p>
+<h2 id="2-请求包体"><a href="#2-请求包体" class="headerlink" title="2. 请求包体"></a>2. 请求包体</h2><p>以这种方式定义的类型的主要应用之一是描述给定动作的请求包体，请求包体描述请求主体的类型。<code>goagen</code> 使用该描述生成操作方法在其请求上下文中接收的相应 <code>Go</code> 结构。有效负载可以内联定义如下：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">Action(<span class="string">&quot;create&quot;</span>, <span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;</span><br><span class="line">	Routing(POST(<span class="string">&quot;&quot;</span>))</span><br><span class="line">	Payload(<span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;</span><br><span class="line">		Member(<span class="string">&quot;name&quot;</span>)</span><br><span class="line">	&#125;)</span><br><span class="line">	Response(Created, <span class="string">&quot;/accounts/[0-9]+&quot;</span>)</span><br><span class="line">&#125;)</span><br></pre></td></tr></table></figure>
+
+<p>或者可以使用预先定义的类型：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> CreatePayload = Type(<span class="string">&quot;CreatePayload&quot;</span>, <span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;</span><br><span class="line">	Attribute(<span class="string">&quot;name&quot;</span>)</span><br><span class="line">&#125;)</span><br><span class="line"></span><br><span class="line">Action(<span class="string">&quot;create&quot;</span>, <span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;</span><br><span class="line">	Routing(POST(<span class="string">&quot;&quot;</span>))</span><br><span class="line">	Payload(CreatePayload)</span><br><span class="line">	Response(Created, <span class="string">&quot;/accounts/[0-9]+&quot;</span>)</span><br><span class="line">&#125;)</span><br></pre></td></tr></table></figure>
+
+<p>前一种表示法最终会创建一个由生成器内部使用的匿名类型。请注意，DSL 是递归的，上面的示例没有指定 <code>name</code> 属性的类型，因此默认为 <code>String</code>。但它可以使用任何其他类型，包括内联定义的数据结构或通过预定义类型：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">Action(<span class="string">&quot;create&quot;</span>, <span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;</span><br><span class="line">	Routing(POST(<span class="string">&quot;&quot;</span>))</span><br><span class="line">	Payload(<span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;</span><br><span class="line">		Member(<span class="string">&quot;address&quot;</span>, <span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;</span><br><span class="line">			Attribute(<span class="string">&quot;street&quot;</span>)</span><br><span class="line">			Attribute(<span class="string">&quot;number&quot;</span>, Integer)</span><br><span class="line">		&#125;)</span><br><span class="line">	&#125;)</span><br><span class="line">	Response(Created, <span class="string">&quot;/accounts/[0-9]+&quot;</span>)</span><br><span class="line">&#125;)</span><br></pre></td></tr></table></figure>
+
+<p>或者：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">Action(<span class="string">&quot;create&quot;</span>, <span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;</span><br><span class="line">	Routing(POST(<span class="string">&quot;&quot;</span>))</span><br><span class="line">	Payload(<span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;</span><br><span class="line">		Member(<span class="string">&quot;name&quot;</span>, Address) <span class="comment">// where Address is a predefined type</span></span><br><span class="line">	&#125;)</span><br><span class="line">	Response(Created, <span class="string">&quot;/accounts/[0-9]+&quot;</span>)</span><br><span class="line">&#125;)</span><br></pre></td></tr></table></figure>
+
+<p>无论在何处使用属性，都存在相同的灵活性。</p>
+<p>可以使用如上所示的变量或使用其名称来引用预定义类型，即 <code>Payload(CreatePayload)</code> 也可以写为 <code>Payload(&quot;CreatePayload&quot;)</code>，因为 “CreatePayload” 是 CreatePayload 类型定义中给出的名称。他可以定义相互依赖的类型，而不会让 Go 编译器出现依赖循环。</p>
+<h2 id="3-媒体类型"><a href="#3-媒体类型" class="headerlink" title="3. 媒体类型"></a>3. 媒体类型</h2><p>类型的另一个常见用途是描述响应媒体类型。响应媒体类型定义响应包体的类型。媒体类型与类型的不同之处在于它们还定义了视图和链接，有关详细信息请参阅<a target="_blank" rel="noopener" href="https://goa.design/design/overview/">概述</a>。基本媒体类型定义可能如下所示：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> MT = MediaType(<span class="string">&quot;application/vnd.app.mt&quot;</span>, <span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;</span><br><span class="line">	Attributes(<span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;</span><br><span class="line">		Attribute(<span class="string">&quot;name&quot;</span>)</span><br><span class="line">	&#125;)</span><br><span class="line">	View(<span class="string">&quot;default&quot;</span>, <span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;</span><br><span class="line">		Attribute(<span class="string">&quot;name&quot;</span>)</span><br><span class="line">	&#125;)</span><br><span class="line">&#125;)</span><br></pre></td></tr></table></figure>
+
+<p><code>MediaType</code> 的第一个参数是 <a target="_blank" rel="noopener" href="https://tools.ietf.org/html/rfc6838">RFC 6838</a> 定义的媒体类型标识符。DSL 列出的属性类似于如何在类型中定义属性，视图以及可选的链接到其他媒体类型，这里有 <code>default</code> 默认视图。然后可以使用这种媒体类型来定义动作的响应，如下所述：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">Action(<span class="string">&quot;show&quot;</span>, <span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;</span><br><span class="line">	Routing(GET(<span class="string">&quot;/:accountID&quot;</span>))</span><br><span class="line">	Params(<span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;</span><br><span class="line">		Param(<span class="string">&quot;accountID&quot;</span>, Integer, <span class="string">&quot;Account ID&quot;</span>)</span><br><span class="line">	&#125;)</span><br><span class="line">	Response(OK, <span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;</span><br><span class="line">		Media(MT)</span><br><span class="line">	&#125;)</span><br><span class="line">	Response(NotFound)</span><br><span class="line">&#125;)</span><br></pre></td></tr></table></figure>
+
+<p>这相当于：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">Action(<span class="string">&quot;show&quot;</span>, <span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;</span><br><span class="line">	Routing(GET(<span class="string">&quot;/:accountID&quot;</span>))</span><br><span class="line">	Params(<span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;</span><br><span class="line">		Param(<span class="string">&quot;accountID&quot;</span>, Integer, <span class="string">&quot;Account ID&quot;</span>)</span><br><span class="line">	&#125;)</span><br><span class="line">	Response(OK, MT)</span><br><span class="line">	Response(NotFound)</span><br><span class="line">&#125;)</span><br></pre></td></tr></table></figure>
+
+<p>或者这样：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">Action(<span class="string">&quot;show&quot;</span>, <span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;</span><br><span class="line">	Routing(GET(<span class="string">&quot;/:accountID&quot;</span>))</span><br><span class="line">	Params(<span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;</span><br><span class="line">		Param(<span class="string">&quot;accountID&quot;</span>, Integer, <span class="string">&quot;Account ID&quot;</span>)</span><br><span class="line">	&#125;)</span><br><span class="line">	Response(OK, <span class="string">&quot;application/vnd.app.mt&quot;</span>)</span><br><span class="line">	Response(NotFound)</span><br><span class="line">&#125;)</span><br></pre></td></tr></table></figure>
+
+<p>可以使用变量或媒体类型标识符来引用媒体类型，类似于如何使用变量或其名称引用类型。</p>
+<p>通常情况是使用相同的属性来定义动作请求包体和响应媒体类型。REST API 尤其如此，其中在响应中返回它的表示形式与请求的形式相同。goa 设计语言通过提供可以在 <code>Type</code> 和 <code>MediaType</code> 函数调用中使用的 <code>Reference</code> 函数来帮助解决这种常见情况。此函数接受一个参数，该参数可以是包含类型或媒体类型的变量，也可以是类型或媒体类型的名称。使用 <code>Reference</code> 函数可以重用所引用类型的属性，而无需重新定义其所有属性（类型，描述，示例，验证等）。给出以下类型定义：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> CreatePayload = Type(<span class="string">&quot;CreatePayload&quot;</span>, <span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;</span><br><span class="line">	Attribute(<span class="string">&quot;name&quot;</span>, String, <span class="string">&quot;Name of thingy&quot;</span>, <span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;</span><br><span class="line">		MinLength(<span class="number">5</span>)</span><br><span class="line">		MaxLength(<span class="number">256</span>)</span><br><span class="line">		Pattern(<span class="string">&quot;^[a-zA-Z]([a-zA-Z ]+)&quot;</span>)</span><br><span class="line">	&#125;)</span><br><span class="line">&#125;)</span><br></pre></td></tr></table></figure>
+
+<p>媒体类型可以利用 <code>name</code> 属性定义，如下所示：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> MT = MediaType(<span class="string">&quot;application/vnd.app.mt&quot;</span>, <span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;</span><br><span class="line">	Reference(CreatePayload)</span><br><span class="line">	Attributes(<span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;</span><br><span class="line">		Attribute(<span class="string">&quot;name&quot;</span>)</span><br><span class="line">	&#125;)</span><br><span class="line">	View(<span class="string">&quot;default&quot;</span>, <span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;</span><br><span class="line">		Attribute(<span class="string">&quot;name&quot;</span>)</span><br><span class="line">	&#125;)</span><br><span class="line">&#125;)</span><br></pre></td></tr></table></figure>
+
+<p><code>name</code> 属性自动继承相应 <code>CreatePayload</code> 属性中定义的类型，描述和验证。请注意，媒体类型定义仍然需要列出所引用的属性的名称，这使得可以选择要“继承”的属性。如果需要，媒体类型也可以覆盖 <code>name</code> 属性的属性（例如，改变类型，描述，验证等）。</p>
+<p>媒体类型也可以使用媒体类型标识符来引用自己。这使得定义递归媒体类型成为可能，并且不让 Go 编译器产生循环依赖：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> MT = MediaType(<span class="string">&quot;application/vnd.app.mt&quot;</span>, <span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;</span><br><span class="line">	Reference(CreatePayload)</span><br><span class="line">	Attributes(<span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;</span><br><span class="line">		Attribute(<span class="string">&quot;name&quot;</span>)</span><br><span class="line">		Attribute(<span class="string">&quot;children&quot;</span>, CollectionOf(<span class="string">&quot;application/vnd.app.mt&quot;</span>))</span><br><span class="line">	&#125;)</span><br><span class="line">	View(<span class="string">&quot;default&quot;</span>, <span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;</span><br><span class="line">		Attribute(<span class="string">&quot;name&quot;</span>)</span><br><span class="line">	&#125;)</span><br><span class="line">&#125;)</span><br></pre></td></tr></table></figure>
+
+<h2 id="4-混合-Type-和-MediaType"><a href="#4-混合-Type-和-MediaType" class="headerlink" title="4. 混合 Type 和 MediaType"></a>4. 混合 <code>Type</code> 和 <code>MediaType</code></h2><p>我们已经看到了 <code>Reference</code> 如何在类型和媒体类型之间重用属性定义，媒体类型是一种特殊的类型。这意味着它们可以用于代替可以使用 <code>Type</code> 的类型（在定义属性的任何地方）。最佳实践包括仅使用媒体类型来定义响应主体，如上所示，并使用其他所有类型。这是因为媒体类型定义了其他属性，例如仅适用于该用例的标识符，视图和链接。因此，在 <code>Type</code> 和 <code>MediaType</code> 之间共享相同的属性时，定义 <code>Type</code> 并利用 <code>Reference</code> 关键字。</p>
+
+        </div>
+        
+
+    </article>
+    
+    <section id="comments">
+        
+    </section>
+
+
+    
+
+</main>
+
+
+<aside style="" id="sidebar" class="aside aside-fixture">
+    <div class="toc-sidebar">
+        <nav id="toc" class="article-toc">
+            <h3 class="toc-title">文章目录</h3>
+            <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E6%A6%82%E8%BF%B0"><span class="toc-number">1.</span> <span class="toc-text">1. 概述</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E8%AF%B7%E6%B1%82%E5%8C%85%E4%BD%93"><span class="toc-number">2.</span> <span class="toc-text">2. 请求包体</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E5%AA%92%E4%BD%93%E7%B1%BB%E5%9E%8B"><span class="toc-number">3.</span> <span class="toc-text">3. 媒体类型</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E6%B7%B7%E5%90%88-Type-%E5%92%8C-MediaType"><span class="toc-number">4.</span> <span class="toc-text">4. 混合 Type 和 MediaType</span></a></li></ol>
+        </nav>
+    </div>
+</aside>
+
+
+
+
+
+        </section>
+        <footer class="hidden lg:block fixed bottom-0 left-0 sm:w-1/12 lg:w-1/6 bg-gray-100 z-40">
+    
+    <div class="footer-social-links">
+        
+            <a target="_blank" rel="noopener" href="https://github.com/juzipeek">
+                <i class="iconfont icon-github"></i>
+            </a>
+        
+    </div>
+    
+    
+</footer>
+
+        <div id="mask" class="hidden mask fixed inset-0 bg-gray-900 opacity-75 z-40"></div>
+        <div id="search-view-container" class="hidden shadow-xl"></div>
+        
+<script src="/js/dom-event.min.js"></script>
+
+
+
+<script src="/js/local-search.min.js"></script>
+
+
+
+    <script src="//cdn.jsdelivr.net/npm/lightgallery.js@1.1.3/dist/js/lightgallery.min.js"></script>
+    
+<script src="/js/light-gallery.min.js"></script>
+
+
+
+
+
+
+    </body>
+</html>

@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html  lang="zh-CN" >
+    <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, minimum-scale=1, initial-scale=1, maximum-scale=5, viewport-fit=cover">
+    <title>Nginx 用模块的方式组织代码 | 自留地</title>
+    <meta name="description" content="起因在《深入理解 Nginx 模块开发与架构解析》一书中提到在 Nginx 中除少量核心代码，其他一切皆为模块。核心模块（NGX_CORE_MODULE）是基础类型的模块，官方核心模块有六个具体模块：ngx_core_module、ngx_errlog_module、ngx_events_module、ngx_openssl_module、ngx_http_module、ngx_mail_modu">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Nginx 用模块的方式组织代码">
+<meta property="og:url" content="https://juzipeek.github.io/2022/09/03/nginx-2018-11-11-Nginx-%E7%94%A8%E6%A8%A1%E5%9D%97%E7%9A%84%E6%96%B9%E5%BC%8F%E7%BB%84%E7%BB%87%E4%BB%A3%E7%A0%81/index.html">
+<meta property="og:site_name" content="自留地">
+<meta property="og:description" content="起因在《深入理解 Nginx 模块开发与架构解析》一书中提到在 Nginx 中除少量核心代码，其他一切皆为模块。核心模块（NGX_CORE_MODULE）是基础类型的模块，官方核心模块有六个具体模块：ngx_core_module、ngx_errlog_module、ngx_events_module、ngx_openssl_module、ngx_http_module、ngx_mail_modu">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2022-09-03T12:55:44.499Z">
+<meta property="article:modified_time" content="2022-09-03T12:55:44.500Z">
+<meta property="article:author" content="zhou cheng jie">
+<meta property="article:tag" content="C">
+<meta property="article:tag" content="NGINX">
+<meta name="twitter:card" content="summary">
+
+    
+    <link rel="icon" href="/images/favicon.ico" type="image/x-icon">
+
+    
+<link rel="stylesheet" href="/css/common.min.css">
+
+
+
+    
+    
+    
+    
+        <link href="//cdn.jsdelivr.net/npm/lightgallery.js@1.1.3/dist/css/lightgallery.min.css" rel="stylesheet">
+    
+    
+    
+<link rel="stylesheet" href="/css/iconfont.min.css">
+
+    
+    <script>
+        (function(e,t,n,i,s,a,c){e[n]=e[n]||function(){(e[n].q=e[n].q||[]).push(arguments)}
+        ;a=t.createElement(i);c=t.getElementsByTagName(i)[0];a.async=true;a.src=s
+        ;c.parentNode.insertBefore(a,c)
+        })(window,document,"galite","script","https://cdn.jsdelivr.net/npm/ga-lite@2/dist/ga-lite.min.js");
+
+        galite('create', 'G-HFGFGEWD53', 'auto');
+        galite('send', 'pageview');
+    </script>
+    
+<meta name="generator" content="Hexo 5.4.2"></head>
+
+    <body>
+        <header class="header header-fixture">
+    <div class="profile-search-wrap flex sm:block">
+        
+        
+        <div class="profile sm:text-center md:px-1 lg:px-3 sm:pb-4 sm:pt-6">
+            <a id="avatar" role="link" href="https://github.com/juzipeek" class="inline-block lg:w-16 lg:h-16 w-8 h-8 m-2" target="_blank" rel="noopener" rel="noreferrer" >
+                <img src="/images/yellow.jpg" class="rounded-full" alt="avatar">
+            </a>
+            <h2 id="name" class="hidden lg:block">zhou cheng jie</h2>
+            <h3 id="title" class="hidden lg:block">coder</h3>
+            
+            <small id="location" class="hidden lg:block">
+                <i class="iconfont icon-map-icon"></i>
+                BeiJing, China
+            </small>
+            
+        </div>
+        
+        
+<div class="search flex-1 flex lg:inline-block sm:hidden lg:px-4 lg:mt-2 lg:mb-4 lg:w-full">
+    <form id="search-form" class="my-auto flex-1 lg:border lg:border-solid lg:border-gray-200">
+        <div class="input-group table bg-gray-100 lg:bg-white w-full">
+            <input id="search-input" type="text" placeholder="搜索" class="inline-block w-full bg-gray-100 lg:bg-white p-1">
+            <span class="table-cell">
+                <button name="search tigger button" disabled>
+                    <i class="iconfont icon-search m-2"></i>
+                </button>
+            </span>
+        </div>
+    </form>
+        
+<div id="content-json" data-placeholder="搜索" class="invisible hidden">/content.json</div>
+<script id="search-teamplate" type="text/html" data-path="/content.json">
+    <div>
+        <div class="search-header bg-gray-400">
+            <input id="actual-search-input" model="keyword" ref="input" class="inline-block w-full h-10 px-2 py-1" placeholder="搜索" type="text">
+        </div>
+        <div class="search-result bg-gray-200">
+            {{#each searchPosts}}
+            <a href="/{{ path }}" class="result-item block px-2 pb-3 mb-1 pt-1 hover:bg-indigo-100">
+                <i class="iconfont icon-file"></i>
+                <h1 class="result-title inline font-medium text-lg">{{ title }}</h1>
+                <p class="result-content text-gray-600 text-sm">{{{ text }}}</p>
+            </a>
+            {{/each}}
+        </div>
+    </div>
+</script>
+
+</div>
+
+
+        <button name="menu toogle button" id="menu-toggle-btn" class="block sm:hidden p-3" role="button" aria-expanded="false">
+            <i class="iconfont icon-hamburger"></i>
+        </button>
+    </div>
+    <nav id="menu-nav" class="hidden sm:flex flex-col">
+        
+        
+            <div class="menu-item menu-home" role="menuitem">
+                <a href="/.">
+                    <i class="iconfont icon-home" aria-hidden="true"></i>
+                    <span class="menu-title">首页</span>
+                </a>
+            </div>
+        
+        
+            <div class="menu-item menu-archives" role="menuitem">
+                <a href="/archives">
+                    <i class="iconfont icon-archive" aria-hidden="true"></i>
+                    <span class="menu-title">归档</span>
+                </a>
+            </div>
+        
+        
+            <div class="menu-item menu-categories" role="menuitem">
+                <a href="/categories">
+                    <i class="iconfont icon-folder" aria-hidden="true"></i>
+                    <span class="menu-title">分类</span>
+                </a>
+            </div>
+        
+        
+            <div class="menu-item menu-tags" role="menuitem">
+                <a href="/tags">
+                    <i class="iconfont icon-tag" aria-hidden="true"></i>
+                    <span class="menu-title">标签</span>
+                </a>
+            </div>
+        
+        
+            <div class="menu-item menu-about" role="menuitem">
+                <a href="/about">
+                    <i class="iconfont icon-cup" aria-hidden="true"></i>
+                    <span class="menu-title">关于</span>
+                </a>
+            </div>
+        
+        
+<div class="social-links flex sm:flex-col lg:hidden mt-5">
+    
+        <span class="social-item text-center">
+            <a target="_blank" rel="noopener" href="https://github.com/juzipeek">
+                <i class="iconfont social-icon icon-github"></i>
+                <span class="menu-title hidden lg:inline">menu.github</span>
+            </a>
+        </span>
+    
+</div>
+
+
+    </nav>
+</header>
+
+        <section class="main-section">
+            
+    <main class="flex-1 px-4 py-14 md:px-5 lg:px-8 lg:py-4 relative min-h-screen">
+    
+
+    <article class="content article article-archives article-type-list" itemscope="">
+        <header class="article-header">
+            
+    
+        <h1 class="article-title text-lg" itemprop="name">
+            Nginx 用模块的方式组织代码
+        </h1>
+    
+
+
+
+            <p class="article-meta mb-3 text-xs">
+                <span class="article-date">
+    <i class="iconfont icon-calendar-check"></i>
+	<a href="/2022/09/03/nginx-2018-11-11-Nginx-%E7%94%A8%E6%A8%A1%E5%9D%97%E7%9A%84%E6%96%B9%E5%BC%8F%E7%BB%84%E7%BB%87%E4%BB%A3%E7%A0%81/" class="article-date">
+	  <time datetime="2022-09-03T12:55:44.499Z" itemprop="datePublished">9月 3</time>
+	</a>
+</span>
+
+                
+    <span class="article-category">
+    <i class="iconfont icon-folder"></i>
+    <a class="article-category-link" href="/categories/NGINX/">NGINX</a>
+  </span>
+
+
+                
+    <span class="article-tags">
+    <i class="iconfont icon-tag"></i>
+    <a class="article-tag-none-link" href="/tags/C/" rel="tag">C</a>, <a class="article-tag-none-link" href="/tags/NGINX/" rel="tag">NGINX</a>
+  </span>
+
+
+                <span class="_partial/post-comment"><i class="icon icon-comment"></i>
+                    <a href="/2022/09/03/nginx-2018-11-11-Nginx-%E7%94%A8%E6%A8%A1%E5%9D%97%E7%9A%84%E6%96%B9%E5%BC%8F%E7%BB%84%E7%BB%87%E4%BB%A3%E7%A0%81/#comments" class="article-comment-link">
+                        评论
+                    </a>
+                </span>
+                
+    
+        <span class="post-wordcount" itemprop="wordCount">字数统计: 1.5k(字)</span>
+    
+    
+        <span class="post-readcount" itemprop="timeRequired">阅读时长: 6(分)</span>
+    
+
+
+            </p>
+        </header>
+        <div class="marked-body article-body">
+            <h2 id="起因"><a href="#起因" class="headerlink" title="起因"></a>起因</h2><p>在《深入理解 Nginx 模块开发与架构解析》一书中提到在 Nginx 中除少量核心代码，其他一切皆为模块。核心模块（NGX_CORE_MODULE）是基础类型的模块，官方核心模块有六个具体模块：ngx_core_module、ngx_errlog_module、ngx_events_module、ngx_openssl_module、ngx_http_module、ngx_mail_module，非模块化的框架代码只需要关注于如何调用六个核心模块。书中并没有说明框架代码如何调用核心模块，以及如何通过核心模块调用具体代码，本文对此进行分析。</p>
+<h2 id="如何将模块组织进框架"><a href="#如何将模块组织进框架" class="headerlink" title="如何将模块组织进框架"></a>如何将模块组织进框架</h2><p>在 configure 阶段会生成 <code>ngx_modules.c</code> 文件，其中有 <code>ngx_modules</code> 变量包含全部模块（有灵性的想法，不直接在代码中组织模块，通过脚本生成模块关系代码）。在 <code>ngx_init_cycle</code> （在其中调用 <code>ngx_cycle_modules</code> 初始化模块）函数中使用 <code>ngx_cycle_modules</code> 数组对 <code>cycle</code> 中的模块数组进行初始化。</p>
+<h2 id="框架代码如何调用核心模块以及核心模块到业务模块的转换"><a href="#框架代码如何调用核心模块以及核心模块到业务模块的转换" class="headerlink" title="框架代码如何调用核心模块以及核心模块到业务模块的转换"></a>框架代码如何调用核心模块以及核心模块到业务模块的转换</h2><p>官方 Nginx 共有五大类型的模块：配置模块、核心模块、事件模块、HTTP 模块、mail 模块，其中配置模块与核心模块这两种类型由 Nginx 的框架代码定义并直接使用。但是事件模块、HTTP 模块、mail 模块不会与框架产生直接关系。事件模块、HTTP 模块、mail 模块在核心模块中各有一个模块作为自己的“代言人”，并在同类模块中有一个作为核心业务与管理功能的模块。</p>
+<h3 id="1-概览"><a href="#1-概览" class="headerlink" title="1. 概览"></a>1. 概览</h3><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">ngx_cycle_t</span> *</span><br><span class="line"><span class="title function_">ngx_init_cycle</span><span class="params">(<span class="type">ngx_cycle_t</span> *old_cycle)</span></span><br><span class="line">&#123;</span><br><span class="line">    ......	<span class="comment">// 省略其他代码</span></span><br><span class="line">    <span class="keyword">for</span> (i = <span class="number">0</span>; cycle-&gt;modules[i]; i++) &#123;</span><br><span class="line">        <span class="keyword">if</span> (cycle-&gt;modules[i]-&gt;type != NGX_CORE_MODULE) &#123;</span><br><span class="line">            <span class="keyword">continue</span>;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        module = cycle-&gt;modules[i]-&gt;ctx;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (module-&gt;create_conf) &#123;</span><br><span class="line">            rv = module-&gt;create_conf(cycle);</span><br><span class="line">            <span class="keyword">if</span> (rv == <span class="literal">NULL</span>) &#123;</span><br><span class="line">                ngx_destroy_pool(pool);</span><br><span class="line">                <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">            &#125;</span><br><span class="line">            cycle-&gt;conf_ctx[cycle-&gt;modules[i]-&gt;index] = rv;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    ......</span><br><span class="line">	conf.ctx = cycle-&gt;conf_ctx;</span><br><span class="line">    conf.cycle = cycle;</span><br><span class="line">    conf.pool = pool;</span><br><span class="line">    conf.<span class="built_in">log</span> = <span class="built_in">log</span>;</span><br><span class="line">    conf.module_type = NGX_CORE_MODULE;</span><br><span class="line">    conf.cmd_type = NGX_MAIN_CONF;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (ngx_conf_parse(&amp;conf, &amp;cycle-&gt;conf_file) != NGX_CONF_OK) &#123;</span><br><span class="line">        environ = senv;</span><br><span class="line">        ngx_destroy_cycle_pools(&amp;conf);</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    ......</span><br><span class="line">    <span class="keyword">for</span> (i = <span class="number">0</span>; cycle-&gt;modules[i]; i++) &#123;</span><br><span class="line">        <span class="keyword">if</span> (cycle-&gt;modules[i]-&gt;type != NGX_CORE_MODULE) &#123;</span><br><span class="line">            <span class="keyword">continue</span>;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        module = cycle-&gt;modules[i]-&gt;ctx;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (module-&gt;init_conf) &#123;</span><br><span class="line">            <span class="keyword">if</span> (module-&gt;init_conf(cycle,</span><br><span class="line">                                  cycle-&gt;conf_ctx[cycle-&gt;modules[i]-&gt;index])</span><br><span class="line">                == NGX_CONF_ERROR)</span><br><span class="line">            &#123;</span><br><span class="line">                environ = senv;</span><br><span class="line">                ngx_destroy_cycle_pools(&amp;conf);</span><br><span class="line">                <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    ...... <span class="comment">// 省略其他代码</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>观察上面的代码，可以看到会对所有的核心模块（<code>NGX_CORE_MODULE</code> 类型）调用 <code>create_conf</code>、<code>ngx_conf_parse</code>、<code>init_conf</code>，框架直接调用核心模块并没有调用业务模块。核心模块中 <code>ngx_mail_module</code>、<code>ngx_http_module</code>、<code>ngx_openssl_module</code>、<code>ngx_events_module</code>、<code>ngx_error_module</code> 模块作为其他模块在核心模块的代理，当框架调用到他们时会在其 <code>commands</code> 数组中指定处理指令，而在其处理指令中会将待处理的指令类型、指令模块修改为具体类型，这是从核心模块到具体业务模块处理的转化，例如如下 <code>ngx_http_module</code> 模块的 <code>ngx_http_block</code> 处理代码：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">static</span> <span class="type">char</span> *</span><br><span class="line"><span class="title function_">ngx_http_block</span><span class="params">(<span class="type">ngx_conf_t</span> *cf, <span class="type">ngx_command_t</span> *cmd, <span class="type">void</span> *conf)</span></span><br><span class="line">&#123;</span><br><span class="line">    ...		<span class="comment">// 忽略其他代码</span></span><br><span class="line">    cf-&gt;module_type = NGX_HTTP_MODULE;</span><br><span class="line">    cf-&gt;cmd_type = NGX_HTTP_MAIN_CONF;</span><br><span class="line">    rv = ngx_conf_parse(cf, <span class="literal">NULL</span>);</span><br><span class="line">    ...		<span class="comment">// 忽略其他代码</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<h3 id="2-框架如何调用事件模块代理-“ngx-events-module”"><a href="#2-框架如何调用事件模块代理-“ngx-events-module”" class="headerlink" title="2. 框架如何调用事件模块代理 “ngx_events_module”"></a>2. 框架如何调用事件模块代理 “ngx_events_module”</h3><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">static</span> <span class="type">ngx_command_t</span>  ngx_events_commands[] = &#123;</span><br><span class="line"></span><br><span class="line">    &#123; ngx_string(<span class="string">&quot;events&quot;</span>),</span><br><span class="line">      NGX_MAIN_CONF|NGX_CONF_BLOCK|NGX_CONF_NOARGS,</span><br><span class="line">      ngx_events_block,</span><br><span class="line">      <span class="number">0</span>,</span><br><span class="line">      <span class="number">0</span>,</span><br><span class="line">      <span class="literal">NULL</span> &#125;,</span><br><span class="line"></span><br><span class="line">      ngx_null_command</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="type">static</span> <span class="type">ngx_core_module_t</span>  ngx_events_module_ctx = &#123;</span><br><span class="line">    ngx_string(<span class="string">&quot;events&quot;</span>),</span><br><span class="line">    <span class="literal">NULL</span>,</span><br><span class="line">    ngx_event_init_conf</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="type">ngx_module_t</span>  ngx_events_module = &#123;</span><br><span class="line">    NGX_MODULE_V1,</span><br><span class="line">    &amp;ngx_events_module_ctx,                <span class="comment">/* module context */</span></span><br><span class="line">    ngx_events_commands,                   <span class="comment">/* module directives */</span></span><br><span class="line">    NGX_CORE_MODULE,                       <span class="comment">/* module type */</span></span><br><span class="line">    <span class="literal">NULL</span>,                                  <span class="comment">/* init master */</span></span><br><span class="line">    <span class="literal">NULL</span>,                                  <span class="comment">/* init module */</span></span><br><span class="line">    <span class="literal">NULL</span>,                                  <span class="comment">/* init process */</span></span><br><span class="line">    <span class="literal">NULL</span>,                                  <span class="comment">/* init thread */</span></span><br><span class="line">    <span class="literal">NULL</span>,                                  <span class="comment">/* exit thread */</span></span><br><span class="line">    <span class="literal">NULL</span>,                                  <span class="comment">/* exit process */</span></span><br><span class="line">    <span class="literal">NULL</span>,                                  <span class="comment">/* exit master */</span></span><br><span class="line">    NGX_MODULE_V1_PADDING</span><br><span class="line">&#125;;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>从上面代码中可以看到 <code>ngx_events_module</code> 的具体化接口 <code>ngx_events_module_ctx</code> 并不存在 <code>create_conf</code> 调用，而 <code>ngx_event_init_conf</code> 也仅做了 <code>ngx_events_module</code> 模块存在判断，并未做其他工作。那我们猜测 <code>ngx_events_block</code> 做了事件模块的代理工作，下面分析 <code>ngx_events_block</code> 代码。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">pcf = *cf;</span><br><span class="line">cf-&gt;ctx = ctx;</span><br><span class="line"><span class="comment">// 指定处理事件类型模块的指令</span></span><br><span class="line">cf-&gt;module_type = NGX_EVENT_MODULE;</span><br><span class="line">cf-&gt;cmd_type = NGX_EVENT_CONF;</span><br><span class="line"></span><br><span class="line">rv = ngx_conf_parse(cf, <span class="literal">NULL</span>);</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>在 <code>ngx_events_block</code> 中会遍历 <code>cycle</code> 中所有 <code>NGX_EVENT_MODULE</code> 模块（注意 <code>ngx_events_module</code> 为核心模块类型，此时为核心模块到事件模块的处理转换，参见上面的代码），并调用模块的 <code>create_conf</code> 接口创建存储配置项的机构体指针。接下来会为所有的事件模块解析配置文件，调用 <code>ngx_conf_parse</code> 解析 <code>NGX_EVENT_MODULE</code> 类型模块感兴趣的配置项。之后对所有的 <code>NGX_EVENT_MODULE</code> 类型模块回调 <code>init_conf</code>。</p>
+<p><code>ngx_event_core_module</code> 模块作为 <code>NGX_EVENT_MODULE</code> 类型模块的一员，同样会经历上面的步骤：<code>create_conf</code>、<code>init_conf</code> 接口回调以及指令解析。<code>ngx_event_core_module</code> 定义：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">static</span> <span class="type">ngx_str_t</span>  event_core_name = ngx_string(<span class="string">&quot;event_core&quot;</span>);</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="type">static</span> <span class="type">ngx_command_t</span>  ngx_event_core_commands[] = &#123;</span><br><span class="line"></span><br><span class="line">    &#123; ngx_string(<span class="string">&quot;worker_connections&quot;</span>),</span><br><span class="line">      NGX_EVENT_CONF|NGX_CONF_TAKE1,</span><br><span class="line">      ngx_event_connections,</span><br><span class="line">      <span class="number">0</span>,</span><br><span class="line">      <span class="number">0</span>,</span><br><span class="line">      <span class="literal">NULL</span> &#125;,</span><br><span class="line"></span><br><span class="line">    &#123; ngx_string(<span class="string">&quot;use&quot;</span>),</span><br><span class="line">      NGX_EVENT_CONF|NGX_CONF_TAKE1,</span><br><span class="line">      ngx_event_use,</span><br><span class="line">      <span class="number">0</span>,</span><br><span class="line">      <span class="number">0</span>,</span><br><span class="line">      <span class="literal">NULL</span> &#125;,</span><br><span class="line"></span><br><span class="line">    &#123; ngx_string(<span class="string">&quot;multi_accept&quot;</span>),</span><br><span class="line">      ...&#125;,</span><br><span class="line"></span><br><span class="line">    &#123; ngx_string(<span class="string">&quot;accept_mutex&quot;</span>),</span><br><span class="line">      ...&#125;,</span><br><span class="line"></span><br><span class="line">    &#123; ngx_string(<span class="string">&quot;accept_mutex_delay&quot;</span>),</span><br><span class="line">      ...&#125;,</span><br><span class="line">    &#123; ngx_string(<span class="string">&quot;debug_connection&quot;</span>),</span><br><span class="line">      ...&#125;,</span><br><span class="line"></span><br><span class="line">      ngx_null_command</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="type">static</span> <span class="type">ngx_event_module_t</span>  ngx_event_core_module_ctx = &#123;</span><br><span class="line">    &amp;event_core_name,</span><br><span class="line">    ngx_event_core_create_conf,            <span class="comment">/* create configuration */</span></span><br><span class="line">    ngx_event_core_init_conf,              <span class="comment">/* init configuration */</span></span><br><span class="line"></span><br><span class="line">    &#123; <span class="literal">NULL</span>, <span class="literal">NULL</span>, <span class="literal">NULL</span>, <span class="literal">NULL</span>, <span class="literal">NULL</span>, <span class="literal">NULL</span>, <span class="literal">NULL</span>, <span class="literal">NULL</span>, <span class="literal">NULL</span>, <span class="literal">NULL</span> &#125;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="type">ngx_module_t</span>  ngx_event_core_module = &#123;</span><br><span class="line">    NGX_MODULE_V1,</span><br><span class="line">    &amp;ngx_event_core_module_ctx,            <span class="comment">/* module context */</span></span><br><span class="line">    ngx_event_core_commands,               <span class="comment">/* module directives */</span></span><br><span class="line">    NGX_EVENT_MODULE,                      <span class="comment">/* module type */</span></span><br><span class="line">    <span class="literal">NULL</span>,                                  <span class="comment">/* init master */</span></span><br><span class="line">    ngx_event_module_init,                 <span class="comment">/* init module */</span>		<span class="comment">// core 模块作为代理模块就可以做事件模块的模块初始化工作</span></span><br><span class="line">    ngx_event_process_init,                <span class="comment">/* init process */</span>		<span class="comment">// core 模块作为代理模块就可以做事件模块的进程初始化工作</span></span><br><span class="line">    <span class="literal">NULL</span>,                                  <span class="comment">/* init thread */</span></span><br><span class="line">    <span class="literal">NULL</span>,                                  <span class="comment">/* exit thread */</span></span><br><span class="line">    <span class="literal">NULL</span>,                                  <span class="comment">/* exit process */</span></span><br><span class="line">    <span class="literal">NULL</span>,                                  <span class="comment">/* exit master */</span></span><br><span class="line">    NGX_MODULE_V1_PADDING</span><br><span class="line">&#125;;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>观察 <code>ngx_event_core_module</code> 就可以看到 <code>module_init</code>、<code>process_init</code> 是切人点，实现事件模块的代理。</p>
+<h3 id="3-总结"><a href="#3-总结" class="headerlink" title="3. 总结"></a>3. 总结</h3><p>与事件模块类似，HTTP 模块、mail 模块也是通过核心模块转换到核心模块的具象化类型进行处理。这样做的好处是，框架关心核心模块，核心模块中有某个具象模块的代理用来从核心模块到具象模块的转变，将复杂的文件分解抽象以模块的方式组织代码。在之后的源码阅读中可以从其核心模块代理开始，逐步转换到业务模块管理者，再跳转到具体的业务模块实现。</p>
+
+        </div>
+        
+
+    </article>
+    
+    <section id="comments">
+        
+    </section>
+
+
+    
+
+</main>
+
+
+<aside style="" id="sidebar" class="aside aside-fixture">
+    <div class="toc-sidebar">
+        <nav id="toc" class="article-toc">
+            <h3 class="toc-title">文章目录</h3>
+            <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%B5%B7%E5%9B%A0"><span class="toc-number">1.</span> <span class="toc-text">起因</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%A6%82%E4%BD%95%E5%B0%86%E6%A8%A1%E5%9D%97%E7%BB%84%E7%BB%87%E8%BF%9B%E6%A1%86%E6%9E%B6"><span class="toc-number">2.</span> <span class="toc-text">如何将模块组织进框架</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%A1%86%E6%9E%B6%E4%BB%A3%E7%A0%81%E5%A6%82%E4%BD%95%E8%B0%83%E7%94%A8%E6%A0%B8%E5%BF%83%E6%A8%A1%E5%9D%97%E4%BB%A5%E5%8F%8A%E6%A0%B8%E5%BF%83%E6%A8%A1%E5%9D%97%E5%88%B0%E4%B8%9A%E5%8A%A1%E6%A8%A1%E5%9D%97%E7%9A%84%E8%BD%AC%E6%8D%A2"><span class="toc-number">3.</span> <span class="toc-text">框架代码如何调用核心模块以及核心模块到业务模块的转换</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-%E6%A6%82%E8%A7%88"><span class="toc-number">3.1.</span> <span class="toc-text">1. 概览</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E6%A1%86%E6%9E%B6%E5%A6%82%E4%BD%95%E8%B0%83%E7%94%A8%E4%BA%8B%E4%BB%B6%E6%A8%A1%E5%9D%97%E4%BB%A3%E7%90%86-%E2%80%9Cngx-events-module%E2%80%9D"><span class="toc-number">3.2.</span> <span class="toc-text">2. 框架如何调用事件模块代理 “ngx_events_module”</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-%E6%80%BB%E7%BB%93"><span class="toc-number">3.3.</span> <span class="toc-text">3. 总结</span></a></li></ol></li></ol>
+        </nav>
+    </div>
+</aside>
+
+
+
+
+
+        </section>
+        <footer class="hidden lg:block fixed bottom-0 left-0 sm:w-1/12 lg:w-1/6 bg-gray-100 z-40">
+    
+    <div class="footer-social-links">
+        
+            <a target="_blank" rel="noopener" href="https://github.com/juzipeek">
+                <i class="iconfont icon-github"></i>
+            </a>
+        
+    </div>
+    
+    
+</footer>
+
+        <div id="mask" class="hidden mask fixed inset-0 bg-gray-900 opacity-75 z-40"></div>
+        <div id="search-view-container" class="hidden shadow-xl"></div>
+        
+<script src="/js/dom-event.min.js"></script>
+
+
+
+<script src="/js/local-search.min.js"></script>
+
+
+
+    <script src="//cdn.jsdelivr.net/npm/lightgallery.js@1.1.3/dist/js/lightgallery.min.js"></script>
+    
+<script src="/js/light-gallery.min.js"></script>
+
+
+
+
+
+
+    </body>
+</html>

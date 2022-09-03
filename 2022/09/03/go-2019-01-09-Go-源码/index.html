@@ -12,7 +12,7 @@
 <meta property="og:description" content="M在 runtime&#x2F;proc.go 文件中可以看到函数 newm，跟踪进去会发现其实 M 就是系统线程。 init 所有 init 函数都在同一个 goroutine 内执行。 所有 init 函数结束后才会执行 main.main 函数。  内存分配基本策略 每次从操作系统申请一大块内存(比如 1MB),以减少系统调用。 将申请到的大块内存按照特定大小预先切分成小块,构成链表。 为对象分配内存">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2022-09-03T14:47:35.227Z">
-<meta property="article:modified_time" content="2022-09-03T14:47:35.227Z">
+<meta property="article:modified_time" content="2022-09-03T14:55:26.510Z">
 <meta property="article:author" content="zhou cheng jie">
 <meta property="article:tag" content="Go">
 <meta name="twitter:card" content="summary">

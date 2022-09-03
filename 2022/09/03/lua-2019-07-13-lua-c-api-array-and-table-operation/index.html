@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html  lang="zh-CN" >
+    <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, minimum-scale=1, initial-scale=1, maximum-scale=5, viewport-fit=cover">
+    <title>lua c api - array and table operation | 自留地</title>
+    <meta name="description" content="一 概述在 C 中使用 API 通过栈操作表或数组类型的数据，本篇使用示例来演示如果通过栈来操作表。 二 渠道秘钥更新set_channel_key 函数接收一个 table 作为参数，从 table 中获取 channel_name 的值作为 key，之后从动态库的全局渠道秘钥表中获取相应渠道的秘钥，并在 table 中添加或更新 channel_key 条目。 1. 示例代码123456789">
+<meta property="og:type" content="article">
+<meta property="og:title" content="lua c api - array and table operation">
+<meta property="og:url" content="https://juzipeek.github.io/2022/09/03/lua-2019-07-13-lua-c-api-array-and-table-operation/index.html">
+<meta property="og:site_name" content="自留地">
+<meta property="og:description" content="一 概述在 C 中使用 API 通过栈操作表或数组类型的数据，本篇使用示例来演示如果通过栈来操作表。 二 渠道秘钥更新set_channel_key 函数接收一个 table 作为参数，从 table 中获取 channel_name 的值作为 key，之后从动态库的全局渠道秘钥表中获取相应渠道的秘钥，并在 table 中添加或更新 channel_key 条目。 1. 示例代码123456789">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2022-09-03T14:47:43.663Z">
+<meta property="article:modified_time" content="2022-09-03T14:47:43.663Z">
+<meta property="article:author" content="zhou cheng jie">
+<meta property="article:tag" content="C">
+<meta property="article:tag" content="Lua">
+<meta name="twitter:card" content="summary">
+
+    
+    <link rel="icon" href="/images/favicon.ico" type="image/x-icon">
+
+    
+<link rel="stylesheet" href="/css/common.min.css">
+
+
+
+    
+    
+    
+    
+        <link href="//cdn.jsdelivr.net/npm/lightgallery.js@1.1.3/dist/css/lightgallery.min.css" rel="stylesheet">
+    
+    
+    
+<link rel="stylesheet" href="/css/iconfont.min.css">
+
+    
+    <script>
+        (function(e,t,n,i,s,a,c){e[n]=e[n]||function(){(e[n].q=e[n].q||[]).push(arguments)}
+        ;a=t.createElement(i);c=t.getElementsByTagName(i)[0];a.async=true;a.src=s
+        ;c.parentNode.insertBefore(a,c)
+        })(window,document,"galite","script","https://cdn.jsdelivr.net/npm/ga-lite@2/dist/ga-lite.min.js");
+
+        galite('create', 'G-HFGFGEWD53', 'auto');
+        galite('send', 'pageview');
+    </script>
+    
+<meta name="generator" content="Hexo 5.4.2"></head>
+
+    <body>
+        <header class="header header-fixture">
+    <div class="profile-search-wrap flex sm:block">
+        
+        
+        <div class="profile sm:text-center md:px-1 lg:px-3 sm:pb-4 sm:pt-6">
+            <a id="avatar" role="link" href="https://github.com/juzipeek" class="inline-block lg:w-16 lg:h-16 w-8 h-8 m-2" target="_blank" rel="noopener" rel="noreferrer" >
+                <img src="/images/yellow.jpg" class="rounded-full" alt="avatar">
+            </a>
+            <h2 id="name" class="hidden lg:block">zhou cheng jie</h2>
+            <h3 id="title" class="hidden lg:block">coder</h3>
+            
+            <small id="location" class="hidden lg:block">
+                <i class="iconfont icon-map-icon"></i>
+                BeiJing, China
+            </small>
+            
+        </div>
+        
+        
+<div class="search flex-1 flex lg:inline-block sm:hidden lg:px-4 lg:mt-2 lg:mb-4 lg:w-full">
+    <form id="search-form" class="my-auto flex-1 lg:border lg:border-solid lg:border-gray-200">
+        <div class="input-group table bg-gray-100 lg:bg-white w-full">
+            <input id="search-input" type="text" placeholder="搜索" class="inline-block w-full bg-gray-100 lg:bg-white p-1">
+            <span class="table-cell">
+                <button name="search tigger button" disabled>
+                    <i class="iconfont icon-search m-2"></i>
+                </button>
+            </span>
+        </div>
+    </form>
+        
+<div id="content-json" data-placeholder="搜索" class="invisible hidden">/content.json</div>
+<script id="search-teamplate" type="text/html" data-path="/content.json">
+    <div>
+        <div class="search-header bg-gray-400">
+            <input id="actual-search-input" model="keyword" ref="input" class="inline-block w-full h-10 px-2 py-1" placeholder="搜索" type="text">
+        </div>
+        <div class="search-result bg-gray-200">
+            {{#each searchPosts}}
+            <a href="/{{ path }}" class="result-item block px-2 pb-3 mb-1 pt-1 hover:bg-indigo-100">
+                <i class="iconfont icon-file"></i>
+                <h1 class="result-title inline font-medium text-lg">{{ title }}</h1>
+                <p class="result-content text-gray-600 text-sm">{{{ text }}}</p>
+            </a>
+            {{/each}}
+        </div>
+    </div>
+</script>
+
+</div>
+
+
+        <button name="menu toogle button" id="menu-toggle-btn" class="block sm:hidden p-3" role="button" aria-expanded="false">
+            <i class="iconfont icon-hamburger"></i>
+        </button>
+    </div>
+    <nav id="menu-nav" class="hidden sm:flex flex-col">
+        
+        
+            <div class="menu-item menu-home" role="menuitem">
+                <a href="/.">
+                    <i class="iconfont icon-home" aria-hidden="true"></i>
+                    <span class="menu-title">首页</span>
+                </a>
+            </div>
+        
+        
+            <div class="menu-item menu-archives" role="menuitem">
+                <a href="/archives">
+                    <i class="iconfont icon-archive" aria-hidden="true"></i>
+                    <span class="menu-title">归档</span>
+                </a>
+            </div>
+        
+        
+            <div class="menu-item menu-categories" role="menuitem">
+                <a href="/categories">
+                    <i class="iconfont icon-folder" aria-hidden="true"></i>
+                    <span class="menu-title">分类</span>
+                </a>
+            </div>
+        
+        
+            <div class="menu-item menu-tags" role="menuitem">
+                <a href="/tags">
+                    <i class="iconfont icon-tag" aria-hidden="true"></i>
+                    <span class="menu-title">标签</span>
+                </a>
+            </div>
+        
+        
+            <div class="menu-item menu-about" role="menuitem">
+                <a href="/about">
+                    <i class="iconfont icon-cup" aria-hidden="true"></i>
+                    <span class="menu-title">关于</span>
+                </a>
+            </div>
+        
+        
+<div class="social-links flex sm:flex-col lg:hidden mt-5">
+    
+        <span class="social-item text-center">
+            <a target="_blank" rel="noopener" href="https://github.com/juzipeek">
+                <i class="iconfont social-icon icon-github"></i>
+                <span class="menu-title hidden lg:inline">menu.github</span>
+            </a>
+        </span>
+    
+</div>
+
+
+    </nav>
+</header>
+
+        <section class="main-section">
+            
+    <main class="flex-1 px-4 py-14 md:px-5 lg:px-8 lg:py-4 relative min-h-screen">
+    
+
+    <article class="content article article-archives article-type-list" itemscope="">
+        <header class="article-header">
+            
+    
+        <h1 class="article-title text-lg" itemprop="name">
+            lua c api - array and table operation
+        </h1>
+    
+
+
+
+            <p class="article-meta mb-3 text-xs">
+                <span class="article-date">
+    <i class="iconfont icon-calendar-check"></i>
+	<a href="/2022/09/03/lua-2019-07-13-lua-c-api-array-and-table-operation/" class="article-date">
+	  <time datetime="2022-09-03T14:47:43.663Z" itemprop="datePublished">9月 3</time>
+	</a>
+</span>
+
+                
+    <span class="article-category">
+    <i class="iconfont icon-folder"></i>
+    <a class="article-category-link" href="/categories/Lua/">Lua</a>
+  </span>
+
+
+                
+    <span class="article-tags">
+    <i class="iconfont icon-tag"></i>
+    <a class="article-tag-none-link" href="/tags/C/" rel="tag">C</a>, <a class="article-tag-none-link" href="/tags/Lua/" rel="tag">Lua</a>
+  </span>
+
+
+                <span class="_partial/post-comment"><i class="icon icon-comment"></i>
+                    <a href="/2022/09/03/lua-2019-07-13-lua-c-api-array-and-table-operation/#comments" class="article-comment-link">
+                        评论
+                    </a>
+                </span>
+                
+    
+        <span class="post-wordcount" itemprop="wordCount">字数统计: 888(字)</span>
+    
+    
+        <span class="post-readcount" itemprop="timeRequired">阅读时长: 4(分)</span>
+    
+
+
+            </p>
+        </header>
+        <div class="marked-body article-body">
+            <h2 id="一-概述"><a href="#一-概述" class="headerlink" title="一 概述"></a>一 概述</h2><p>在 <code>C</code> 中使用 <code>API</code> 通过栈操作表或数组类型的数据，本篇使用示例来演示如果通过栈来操作表。</p>
+<h2 id="二-渠道秘钥更新"><a href="#二-渠道秘钥更新" class="headerlink" title="二 渠道秘钥更新"></a>二 渠道秘钥更新</h2><p><code>set_channel_key</code> 函数接收一个 <code>table</code> 作为参数，从 <code>table</code> 中获取 <code>channel_name</code> 的值作为 <code>key</code>，之后从动态库的全局渠道秘钥表中获取相应渠道的秘钥，并在 <code>table</code> 中添加或更新 <code>channel_key</code> 条目。</p>
+<h3 id="1-示例代码"><a href="#1-示例代码" class="headerlink" title="1. 示例代码"></a>1. 示例代码</h3><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// gcc -fPIC -I/usr/local/lua5.1.5/include  -g -c private_cfg.c -Wall</span></span><br><span class="line"><span class="comment">// gcc -shared -I/usr/local/lua5.1.5/include  -L/usr/local/lua5.1.5/lib -llua -o private_cfg.so private_cfg.o</span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;stdio.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;stdlib.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;unistd.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;string.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&quot;lua.h&quot;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&quot;lauxlib.h&quot;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&quot;lualib.h&quot;</span></span></span><br><span class="line"></span><br><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">channel_key_s</span> &#123;</span></span><br><span class="line">    <span class="type">char</span> *channel;</span><br><span class="line">    <span class="type">char</span> *key;</span><br><span class="line">&#125; channel_key;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="type">static</span> channel_key </span><br><span class="line">g_channel_keys[] = &#123;</span><br><span class="line">    &#123;<span class="string">&quot;mobile&quot;</span>, <span class="string">&quot;mobile key&quot;</span>&#125;,</span><br><span class="line">    &#123;<span class="string">&quot;pc&quot;</span>, <span class="string">&quot;pc key&quot;</span>&#125;,</span><br><span class="line">    &#123;<span class="literal">NULL</span>, <span class="literal">NULL</span>&#125;,</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="comment">/*******************************************************************************</span></span><br><span class="line"><span class="comment"> * 从全局渠道秘钥表获取秘钥</span></span><br><span class="line"><span class="comment"> ******************************************************************************/</span></span><br><span class="line"><span class="type">static</span> <span class="type">char</span> *</span><br><span class="line"><span class="title function_">get_key</span><span class="params">(<span class="type">char</span> *channel_name)</span> &#123;</span><br><span class="line">    <span class="type">char</span> *key = <span class="literal">NULL</span>;</span><br><span class="line">    </span><br><span class="line">    channel_key *p = g_channel_keys;</span><br><span class="line">    <span class="keyword">for</span> (;p-&gt;channel;p++) &#123;</span><br><span class="line">        <span class="keyword">if</span> (!<span class="built_in">strcmp</span>(p-&gt;channel, channel_name)) &#123;</span><br><span class="line">            key = p-&gt;key;</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> key;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">/*******************************************************************************</span></span><br><span class="line"><span class="comment"> * do_set_channel_key </span></span><br><span class="line"><span class="comment"> * 函数接收一个 table 作为参数，从 table 中获取 channel_name 的值作为 key，</span></span><br><span class="line"><span class="comment"> * 之后从全局渠道秘钥表中获取相应渠道的秘钥，并在 table 中添加 channel_key 条目。</span></span><br><span class="line"><span class="comment"> ******************************************************************************/</span></span><br><span class="line"><span class="type">static</span> <span class="type">int</span></span><br><span class="line"><span class="title function_">do_set_channel_key</span><span class="params">(lua_State *L)</span> &#123;</span><br><span class="line">    <span class="comment">// 参数必须是 table</span></span><br><span class="line">    <span class="keyword">if</span> (!lua_istable(L, <span class="number">-1</span>)) &#123;</span><br><span class="line">        <span class="keyword">return</span> luaL_error(L, <span class="string">&quot;type error, should use table as param!&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 将 table 的 key `channel` 压入栈顶</span></span><br><span class="line">    lua_pushstring(L, <span class="string">&quot;channel_name&quot;</span>);</span><br><span class="line">    <span class="comment">// 从 table 中获取 channel 字段，并其放到栈顶</span></span><br><span class="line">    <span class="comment">// 注意：此时栈顶是 channel 值，栈顶第二个元素是 table。</span></span><br><span class="line">    <span class="comment">//      原先栈顶的 &quot;channel&quot; 字符串已经被使用并移出栈。</span></span><br><span class="line">    lua_gettable(L, <span class="number">-2</span>);</span><br><span class="line">    <span class="keyword">if</span> (!lua_isstring(L, <span class="number">-1</span>)) &#123;</span><br><span class="line">        <span class="keyword">return</span> luaL_error(L, <span class="string">&quot;channel type error, should use string as param!&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 取出 channel 名</span></span><br><span class="line">    <span class="type">char</span> *channel_name = (<span class="type">char</span> *)lua_tostring(L, <span class="number">-1</span>);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 将栈顶的 channel 值出栈，此时栈顶元素是 table</span></span><br><span class="line">    lua_pop(L, <span class="number">1</span>);</span><br><span class="line">    </span><br><span class="line">    <span class="type">char</span> *key = get_key(channel_name);</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 在表中添加记录</span></span><br><span class="line">    lua_pushstring(L, <span class="string">&quot;channel_key&quot;</span>);</span><br><span class="line">    lua_pushstring(L, key);</span><br><span class="line">    lua_settable(L, <span class="number">-3</span>);</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="type">static</span> <span class="type">const</span> </span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">luaL_reg</span> <span class="title">private_cfg</span>[] =</span> &#123;</span><br><span class="line">    &#123;<span class="string">&quot;set_channel_key&quot;</span>, do_set_channel_key&#125;,</span><br><span class="line">    &#123;<span class="literal">NULL</span>, <span class="literal">NULL</span>&#125;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="comment">/******************************************************************************</span></span><br><span class="line"><span class="comment">* 注册函数</span></span><br><span class="line"><span class="comment">******************************************************************************/</span></span><br><span class="line"><span class="type">int</span> </span><br><span class="line"><span class="title function_">luaopen_private_cfg</span><span class="params">(lua_State *l)</span> &#123;</span><br><span class="line">    luaL_openlib(l, <span class="string">&quot;private_cfg&quot;</span>, private_cfg, <span class="number">0</span>);</span><br><span class="line">    <span class="keyword">return</span> <span class="number">1</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="2-执行"><a href="#2-执行" class="headerlink" title="2. 执行"></a>2. 执行</h3><figure class="highlight lua"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">requrie <span class="string">&quot;private_cfg&quot;</span></span><br><span class="line">tb = &#123;channel_name = <span class="string">&#x27;mobile&#x27;</span>, channel_key = <span class="string">&#x27;no&#x27;</span>&#125;</span><br><span class="line">private_cfg.set_channel_key(tb)</span><br><span class="line"><span class="built_in">print</span>(tb[<span class="string">&#x27;channel_key&#x27;</span>]) <span class="comment">--&gt; mobile key</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="三-函数说明"><a href="#三-函数说明" class="headerlink" title="三 函数说明"></a>三 函数说明</h2><h3 id="1-访问表"><a href="#1-访问表" class="headerlink" title="1. 访问表"></a>1. 访问表</h3><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">void</span> <span class="title function_">lua_gettable</span><span class="params">(lua_State *L, <span class="type">int</span> index)</span>;</span><br><span class="line"><span class="type">void</span> <span class="title function_">lua_rawget</span><span class="params">(lua_State *L, <span class="type">int</span> index)</span>;</span><br><span class="line"><span class="type">void</span> <span class="title function_">lua_rawgeti</span><span class="params">(lua_State *L, <span class="type">int</span> index, <span class="type">int</span> n)</span>;</span><br></pre></td></tr></table></figure>
+
+<p><code>lua_gettable</code> 将 <code>t[k]</code> 的值压入栈顶，表是由 <code>index</code> 索引确定的栈上元素，<code>k</code> 使用栈顶元素。<strong>函数会将栈顶的 <code>k</code> 元素 <code>pop</code> 出栈</strong>。</p>
+<p><code>lua_rawget</code> 与 <code>lua_gettable</code> 函数功能相似，只是 <code>lua_rawget</code> 不会使用表的元方法（<code>metamethods</code>）。</p>
+<p><code>lua_rawgeti</code> 将 <code>t[n]</code> 值压入栈，<code>t</code> 由 <code>index</code> 索引指定，<code>n</code> 为字面值，不会使用元方法。</p>
+<h3 id="2-更新表"><a href="#2-更新表" class="headerlink" title="2. 更新表"></a>2. 更新表</h3><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">void</span> <span class="title function_">lua_settable</span><span class="params">(lua_State *L, <span class="type">int</span> index)</span>;</span><br><span class="line"><span class="type">void</span> <span class="title function_">lua_rawset</span><span class="params">(lua_State *L, <span class="type">int</span> index)</span>;</span><br><span class="line"><span class="type">void</span> <span class="title function_">lua_rawseti</span><span class="params">(lua_State *L, <span class="type">int</span> index, <span class="type">int</span> n)</span>;</span><br></pre></td></tr></table></figure>
+
+<p><code>lua_settable</code> 与 <code>lua</code> 中的 <code>t[k] = v</code> 语义相同，表 <code>t</code> 是由 <code>index</code> 索引确定的栈上元素，<code>v</code> 是当前栈顶元素，<code>k</code> 是当前次栈顶元素。<strong>此函数会将栈顶、次栈顶元素 <code>pop</code> 出栈</strong>。</p>
+<p><code>lua_rawset</code> 与 <code>lua_settable</code> 函数功能相似，只是 <code>lua_rawset</code> 不会使用表的元方法（<code>metamethods</code>）。</p>
+<p><code>lua_rawseti</code> 与 <code>lua</code> 中的 <code>t[n] = v</code> 语义相同，表 <code>t</code> 是由 <code>index</code> 索引确定的栈上元素，<code>v</code> 是当前栈顶元素，<code>n</code>  为字面值，该函数不会使用元方法。</p>
+<h3 id="3-错误输出"><a href="#3-错误输出" class="headerlink" title="3. 错误输出"></a>3. 错误输出</h3><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">int</span> <span class="title function_">luaL_error</span> <span class="params">(lua_State *L, <span class="type">const</span> <span class="type">char</span> *fmt, ...)</span>;</span><br></pre></td></tr></table></figure>
+
+<p>触发错误，并输出 <code>fmt</code> 格式的错误信息，如果能获取文件名或行号会添加这些信息。</p>
+<h2 id="四-参考"><a href="#四-参考" class="headerlink" title="四 参考"></a>四 参考</h2><ul>
+<li><a target="_blank" rel="noopener" href="https://www.lua.org/pil/25.1.html">programming in lua</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.lua.org/manual/5.1/manual.html">lua 5.1 c api 手册</a></li>
+</ul>
+
+        </div>
+        
+
+    </article>
+    
+    <section id="comments">
+        
+    </section>
+
+
+    
+
+</main>
+
+
+<aside style="" id="sidebar" class="aside aside-fixture">
+    <div class="toc-sidebar">
+        <nav id="toc" class="article-toc">
+            <h3 class="toc-title">文章目录</h3>
+            <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80-%E6%A6%82%E8%BF%B0"><span class="toc-number">1.</span> <span class="toc-text">一 概述</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C-%E6%B8%A0%E9%81%93%E7%A7%98%E9%92%A5%E6%9B%B4%E6%96%B0"><span class="toc-number">2.</span> <span class="toc-text">二 渠道秘钥更新</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-%E7%A4%BA%E4%BE%8B%E4%BB%A3%E7%A0%81"><span class="toc-number">2.1.</span> <span class="toc-text">1. 示例代码</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E6%89%A7%E8%A1%8C"><span class="toc-number">2.2.</span> <span class="toc-text">2. 执行</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89-%E5%87%BD%E6%95%B0%E8%AF%B4%E6%98%8E"><span class="toc-number">3.</span> <span class="toc-text">三 函数说明</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-%E8%AE%BF%E9%97%AE%E8%A1%A8"><span class="toc-number">3.1.</span> <span class="toc-text">1. 访问表</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E6%9B%B4%E6%96%B0%E8%A1%A8"><span class="toc-number">3.2.</span> <span class="toc-text">2. 更新表</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-%E9%94%99%E8%AF%AF%E8%BE%93%E5%87%BA"><span class="toc-number">3.3.</span> <span class="toc-text">3. 错误输出</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9B%9B-%E5%8F%82%E8%80%83"><span class="toc-number">4.</span> <span class="toc-text">四 参考</span></a></li></ol>
+        </nav>
+    </div>
+</aside>
+
+
+
+
+
+        </section>
+        <footer class="hidden lg:block fixed bottom-0 left-0 sm:w-1/12 lg:w-1/6 bg-gray-100 z-40">
+    
+    <div class="footer-social-links">
+        
+            <a target="_blank" rel="noopener" href="https://github.com/juzipeek">
+                <i class="iconfont icon-github"></i>
+            </a>
+        
+    </div>
+    
+    
+</footer>
+
+        <div id="mask" class="hidden mask fixed inset-0 bg-gray-900 opacity-75 z-40"></div>
+        <div id="search-view-container" class="hidden shadow-xl"></div>
+        
+<script src="/js/dom-event.min.js"></script>
+
+
+
+<script src="/js/local-search.min.js"></script>
+
+
+
+    <script src="//cdn.jsdelivr.net/npm/lightgallery.js@1.1.3/dist/js/lightgallery.min.js"></script>
+    
+<script src="/js/light-gallery.min.js"></script>
+
+
+
+
+
+
+    </body>
+</html>

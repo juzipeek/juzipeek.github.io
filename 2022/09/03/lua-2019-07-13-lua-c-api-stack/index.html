@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html  lang="zh-CN" >
+    <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, minimum-scale=1, initial-scale=1, maximum-scale=5, viewport-fit=cover">
+    <title>lua c api - stack | 自留地</title>
+    <meta name="description" content="一 概述《lua c api》系列文章描述的是 C 语言作为宿主语言，与 Lua 程序通讯的 API 接口。 二 stackLua 使用虚拟的栈与宿主 C 语言进行通讯，在栈中的每个元素都是 Lua 识别的数据类型。每当 Lua 调用 C 时，被调用的 C 函数都会得到一个新的栈，该栈独立于以前的栈和仍处于活跃状态的 C 函数栈。在此堆栈包含 lua 调用 C 函数的所有参数，C 函数应该将需要返">
+<meta property="og:type" content="article">
+<meta property="og:title" content="lua c api - stack">
+<meta property="og:url" content="https://juzipeek.github.io/2022/09/03/lua-2019-07-13-lua-c-api-stack/index.html">
+<meta property="og:site_name" content="自留地">
+<meta property="og:description" content="一 概述《lua c api》系列文章描述的是 C 语言作为宿主语言，与 Lua 程序通讯的 API 接口。 二 stackLua 使用虚拟的栈与宿主 C 语言进行通讯，在栈中的每个元素都是 Lua 识别的数据类型。每当 Lua 调用 C 时，被调用的 C 函数都会得到一个新的栈，该栈独立于以前的栈和仍处于活跃状态的 C 函数栈。在此堆栈包含 lua 调用 C 函数的所有参数，C 函数应该将需要返">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2022-09-03T14:47:43.662Z">
+<meta property="article:modified_time" content="2022-09-03T14:47:43.662Z">
+<meta property="article:author" content="zhou cheng jie">
+<meta property="article:tag" content="C">
+<meta property="article:tag" content="Lua">
+<meta name="twitter:card" content="summary">
+
+    
+    <link rel="icon" href="/images/favicon.ico" type="image/x-icon">
+
+    
+<link rel="stylesheet" href="/css/common.min.css">
+
+
+
+    
+    
+    
+    
+        <link href="//cdn.jsdelivr.net/npm/lightgallery.js@1.1.3/dist/css/lightgallery.min.css" rel="stylesheet">
+    
+    
+    
+<link rel="stylesheet" href="/css/iconfont.min.css">
+
+    
+    <script>
+        (function(e,t,n,i,s,a,c){e[n]=e[n]||function(){(e[n].q=e[n].q||[]).push(arguments)}
+        ;a=t.createElement(i);c=t.getElementsByTagName(i)[0];a.async=true;a.src=s
+        ;c.parentNode.insertBefore(a,c)
+        })(window,document,"galite","script","https://cdn.jsdelivr.net/npm/ga-lite@2/dist/ga-lite.min.js");
+
+        galite('create', 'G-HFGFGEWD53', 'auto');
+        galite('send', 'pageview');
+    </script>
+    
+<meta name="generator" content="Hexo 5.4.2"></head>
+
+    <body>
+        <header class="header header-fixture">
+    <div class="profile-search-wrap flex sm:block">
+        
+        
+        <div class="profile sm:text-center md:px-1 lg:px-3 sm:pb-4 sm:pt-6">
+            <a id="avatar" role="link" href="https://github.com/juzipeek" class="inline-block lg:w-16 lg:h-16 w-8 h-8 m-2" target="_blank" rel="noopener" rel="noreferrer" >
+                <img src="/images/yellow.jpg" class="rounded-full" alt="avatar">
+            </a>
+            <h2 id="name" class="hidden lg:block">zhou cheng jie</h2>
+            <h3 id="title" class="hidden lg:block">coder</h3>
+            
+            <small id="location" class="hidden lg:block">
+                <i class="iconfont icon-map-icon"></i>
+                BeiJing, China
+            </small>
+            
+        </div>
+        
+        
+<div class="search flex-1 flex lg:inline-block sm:hidden lg:px-4 lg:mt-2 lg:mb-4 lg:w-full">
+    <form id="search-form" class="my-auto flex-1 lg:border lg:border-solid lg:border-gray-200">
+        <div class="input-group table bg-gray-100 lg:bg-white w-full">
+            <input id="search-input" type="text" placeholder="搜索" class="inline-block w-full bg-gray-100 lg:bg-white p-1">
+            <span class="table-cell">
+                <button name="search tigger button" disabled>
+                    <i class="iconfont icon-search m-2"></i>
+                </button>
+            </span>
+        </div>
+    </form>
+        
+<div id="content-json" data-placeholder="搜索" class="invisible hidden">/content.json</div>
+<script id="search-teamplate" type="text/html" data-path="/content.json">
+    <div>
+        <div class="search-header bg-gray-400">
+            <input id="actual-search-input" model="keyword" ref="input" class="inline-block w-full h-10 px-2 py-1" placeholder="搜索" type="text">
+        </div>
+        <div class="search-result bg-gray-200">
+            {{#each searchPosts}}
+            <a href="/{{ path }}" class="result-item block px-2 pb-3 mb-1 pt-1 hover:bg-indigo-100">
+                <i class="iconfont icon-file"></i>
+                <h1 class="result-title inline font-medium text-lg">{{ title }}</h1>
+                <p class="result-content text-gray-600 text-sm">{{{ text }}}</p>
+            </a>
+            {{/each}}
+        </div>
+    </div>
+</script>
+
+</div>
+
+
+        <button name="menu toogle button" id="menu-toggle-btn" class="block sm:hidden p-3" role="button" aria-expanded="false">
+            <i class="iconfont icon-hamburger"></i>
+        </button>
+    </div>
+    <nav id="menu-nav" class="hidden sm:flex flex-col">
+        
+        
+            <div class="menu-item menu-home" role="menuitem">
+                <a href="/.">
+                    <i class="iconfont icon-home" aria-hidden="true"></i>
+                    <span class="menu-title">首页</span>
+                </a>
+            </div>
+        
+        
+            <div class="menu-item menu-archives" role="menuitem">
+                <a href="/archives">
+                    <i class="iconfont icon-archive" aria-hidden="true"></i>
+                    <span class="menu-title">归档</span>
+                </a>
+            </div>
+        
+        
+            <div class="menu-item menu-categories" role="menuitem">
+                <a href="/categories">
+                    <i class="iconfont icon-folder" aria-hidden="true"></i>
+                    <span class="menu-title">分类</span>
+                </a>
+            </div>
+        
+        
+            <div class="menu-item menu-tags" role="menuitem">
+                <a href="/tags">
+                    <i class="iconfont icon-tag" aria-hidden="true"></i>
+                    <span class="menu-title">标签</span>
+                </a>
+            </div>
+        
+        
+            <div class="menu-item menu-about" role="menuitem">
+                <a href="/about">
+                    <i class="iconfont icon-cup" aria-hidden="true"></i>
+                    <span class="menu-title">关于</span>
+                </a>
+            </div>
+        
+        
+<div class="social-links flex sm:flex-col lg:hidden mt-5">
+    
+        <span class="social-item text-center">
+            <a target="_blank" rel="noopener" href="https://github.com/juzipeek">
+                <i class="iconfont social-icon icon-github"></i>
+                <span class="menu-title hidden lg:inline">menu.github</span>
+            </a>
+        </span>
+    
+</div>
+
+
+    </nav>
+</header>
+
+        <section class="main-section">
+            
+    <main class="flex-1 px-4 py-14 md:px-5 lg:px-8 lg:py-4 relative min-h-screen">
+    
+
+    <article class="content article article-archives article-type-list" itemscope="">
+        <header class="article-header">
+            
+    
+        <h1 class="article-title text-lg" itemprop="name">
+            lua c api - stack
+        </h1>
+    
+
+
+
+            <p class="article-meta mb-3 text-xs">
+                <span class="article-date">
+    <i class="iconfont icon-calendar-check"></i>
+	<a href="/2022/09/03/lua-2019-07-13-lua-c-api-stack/" class="article-date">
+	  <time datetime="2022-09-03T14:47:43.662Z" itemprop="datePublished">9月 3</time>
+	</a>
+</span>
+
+                
+    <span class="article-category">
+    <i class="iconfont icon-folder"></i>
+    <a class="article-category-link" href="/categories/Lua/">Lua</a>
+  </span>
+
+
+                
+    <span class="article-tags">
+    <i class="iconfont icon-tag"></i>
+    <a class="article-tag-none-link" href="/tags/C/" rel="tag">C</a>, <a class="article-tag-none-link" href="/tags/Lua/" rel="tag">Lua</a>
+  </span>
+
+
+                <span class="_partial/post-comment"><i class="icon icon-comment"></i>
+                    <a href="/2022/09/03/lua-2019-07-13-lua-c-api-stack/#comments" class="article-comment-link">
+                        评论
+                    </a>
+                </span>
+                
+    
+        <span class="post-wordcount" itemprop="wordCount">字数统计: 830(字)</span>
+    
+    
+        <span class="post-readcount" itemprop="timeRequired">阅读时长: 3(分)</span>
+    
+
+
+            </p>
+        </header>
+        <div class="marked-body article-body">
+            <h2 id="一-概述"><a href="#一-概述" class="headerlink" title="一 概述"></a>一 概述</h2><p>《lua c api》系列文章描述的是 <code>C</code> 语言作为宿主语言，与 <code>Lua</code> 程序通讯的 <code>API</code> 接口。</p>
+<h2 id="二-stack"><a href="#二-stack" class="headerlink" title="二 stack"></a>二 stack</h2><p><code>Lua</code> 使用虚拟的栈与宿主 <code>C</code> 语言进行通讯，在栈中的每个元素都是 <code>Lua</code> 识别的数据类型。<strong>每当 <code>Lua</code> 调用 <code>C</code> 时，被调用的 <code>C</code> 函数都会得到一个新的栈，该栈独立于以前的栈和仍处于活跃状态的 <code>C</code> 函数栈</strong>。在此堆栈包含 <code>lua</code> 调用 <code>C</code> 函数的所有参数，<code>C</code> 函数应该将需要返回的结果压入此堆栈中（<strong>是否需要清空栈</strong>）。</p>
+<p>为了方便，在 <code>C</code> 中操作栈时并未严格遵守栈操作语义，可以使用“索引”来查询栈中的元素。正数索引从栈底开始计数，栈底索引为 <code>1</code>；负数索引从栈顶开始计数，栈顶索引为 <code>-1</code>。示例结构：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">---------------------------------------</span><br><span class="line">| 正数索引 |  数据   | 负数索引 | 栈中位置 |</span><br><span class="line">---------------------------------------</span><br><span class="line">|    3    |   nil  |   -1    |  栈顶   |</span><br><span class="line">|    2    |   2    |   -2    |  中间   |</span><br><span class="line">|    1    |  &quot;hi&quot;  |   -3    |  栈底   |</span><br></pre></td></tr></table></figure>
+
+<p>注意，使用 <code>0</code> 作为索引会出错。</p>
+<h2 id="三-示例"><a href="#三-示例" class="headerlink" title="三 示例"></a>三 示例</h2><p><em>使用 <code>lua5.1.5</code> 版本</em></p>
+<h3 id="1-程序"><a href="#1-程序" class="headerlink" title="1. 程序"></a>1. 程序</h3><p>在示例中 <code>echo</code> 函数会返回所有调用参数，在返回时栈底元素作为第一个返回值，栈顶元素作为最后一个返回值；<code>sayhi</code> 会清空栈顶并返回一个 “hi” 字符串。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// gcc -fPIC -I/usr/local/lua5.1.5/include -g -c stack.c</span></span><br><span class="line"><span class="comment">// gcc -shared -I/usr/local/lua5.1.5/include  -L/usr/local/lua5.1.5/lib -llua -o stack.so stack.o</span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;stdio.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;stdlib.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;unistd.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&quot;lua.h&quot;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&quot;lauxlib.h&quot;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&quot;lualib.h&quot;</span></span></span><br><span class="line"></span><br><span class="line"><span class="comment">/******************************************************************************</span></span><br><span class="line"><span class="comment"> * sayhi 函数</span></span><br><span class="line"><span class="comment"> * 清空栈，并将 hi 字符串压入栈顶</span></span><br><span class="line"><span class="comment"> ******************************************************************************/</span></span><br><span class="line"><span class="type">static</span> <span class="type">int</span> </span><br><span class="line"><span class="title function_">sayhi</span><span class="params">(lua_State *L)</span> &#123;</span><br><span class="line">    lua_settop(L, <span class="number">0</span>);</span><br><span class="line">    lua_pushstring(L, <span class="string">&quot;hi&quot;</span>);</span><br><span class="line">    <span class="keyword">return</span> <span class="number">1</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">/******************************************************************************</span></span><br><span class="line"><span class="comment"> * echo 函数会返回所有输入参数</span></span><br><span class="line"><span class="comment"> ******************************************************************************/</span></span><br><span class="line"><span class="type">static</span> <span class="type">int</span></span><br><span class="line"><span class="title function_">echo</span><span class="params">(lua_State *L)</span> &#123;</span><br><span class="line">    <span class="type">int</span> num = lua_gettop(L);</span><br><span class="line">    <span class="keyword">return</span> num;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="type">static</span> <span class="type">const</span> </span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">luaL_reg</span> <span class="title">stack_lib</span>[] =</span> &#123;</span><br><span class="line">    &#123;<span class="string">&quot;sayhi&quot;</span>, sayhi&#125;,</span><br><span class="line">    &#123;<span class="string">&quot;echo&quot;</span>, echo&#125;,</span><br><span class="line">    &#123;<span class="literal">NULL</span>, <span class="literal">NULL</span>&#125;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="comment">/******************************************************************************</span></span><br><span class="line"><span class="comment"> * 注册函数</span></span><br><span class="line"><span class="comment"> * 注意 luaopen_xxx 中 xxx 为 lua 中 require 库名称</span></span><br><span class="line"><span class="comment"> ******************************************************************************/</span></span><br><span class="line"><span class="type">int</span> </span><br><span class="line"><span class="title function_">luaopen_stack</span><span class="params">(lua_State *l)</span> &#123;</span><br><span class="line">    luaL_openlib(l, <span class="string">&quot;stack&quot;</span>, stack_lib, <span class="number">0</span>);</span><br><span class="line">    <span class="keyword">return</span> <span class="number">1</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><em>编译命令在代码开始处</em></p>
+<h3 id="2-调用"><a href="#2-调用" class="headerlink" title="2. 调用"></a>2. 调用</h3><p>在解释器中可以调用测试：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">Lua 5.1.5  Copyright (C) 1994-2012 Lua.org, PUC-Rio</span><br><span class="line">&gt; require <span class="string">&quot;stack&quot;</span></span><br><span class="line">&gt; r1,r2 = stack.echo(<span class="string">&quot;a&quot;</span>,<span class="string">&quot;b&quot;</span>)</span><br><span class="line">&gt; <span class="built_in">print</span>(r1,r2)</span><br><span class="line">a	b</span><br><span class="line">&gt; r = stack.sayhi()</span><br><span class="line">&gt; <span class="built_in">print</span>(r)</span><br><span class="line">hi</span><br></pre></td></tr></table></figure>
+
+<h2 id="四-函数说明"><a href="#四-函数说明" class="headerlink" title="四 函数说明"></a>四 函数说明</h2><h3 id="1-栈顶索引操作"><a href="#1-栈顶索引操作" class="headerlink" title="1. 栈顶索引操作"></a>1. 栈顶索引操作</h3><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">void</span> <span class="title function_">lua_settop</span> <span class="params">(lua_State *L, <span class="type">int</span> index)</span>;</span><br></pre></td></tr></table></figure>
+
+<p>函数功能：<br>将 <code>L</code> 的栈顶设置到 <code>index</code> 指定的索引处。<br>如果 <code>index</code> 比现有的栈顶高，会扩充栈，扩充的栈中值为 <code>nil</code>。<br>如果 <code>index</code> 比现有的栈顶低，那么 <code>index</code> 到历史栈顶之间的元素会被删除。<br>如果 <code>index</code> 为 <code>0</code>，那么栈中所有元素都将被删掉。</p>
+<h3 id="2-字符串压入栈"><a href="#2-字符串压入栈" class="headerlink" title="2. 字符串压入栈"></a>2. 字符串压入栈</h3><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">void</span> <span class="title function_">lua_pushstring</span> <span class="params">(lua_State *L, <span class="type">const</span> <span class="type">char</span> *s)</span>;</span><br></pre></td></tr></table></figure>
+
+<p>将 <code>s</code> 指向的字符串压入 <code>L</code> 的栈顶。字符串会以 “\0” 结束。<br>需要注意：**<code>lua_pushstring</code> 会做值拷贝，不需要担心调用栈退出后内存回收导致 <code>coredump</code> 问题**。</p>
+<h3 id="3-获得栈顶索引"><a href="#3-获得栈顶索引" class="headerlink" title="3. 获得栈顶索引"></a>3. 获得栈顶索引</h3><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">int</span> <span class="title function_">lua_gettop</span> <span class="params">(lua_State *L)</span>;</span><br></pre></td></tr></table></figure>
+
+<p>获得栈顶元素的索引。因为栈底索引是 <code>1</code> 所以栈顶元素索引等价于调用栈中所有元素数量。如果返回值为 <code>0</code> 说明栈为空。</p>
+<h2 id="五-参考"><a href="#五-参考" class="headerlink" title="五 参考"></a>五 参考</h2><ul>
+<li><a target="_blank" rel="noopener" href="https://www.lua.org/manual/5.1/manual.html#lua_checkstack">lua 5.1 手册</a></li>
+</ul>
+
+        </div>
+        
+
+    </article>
+    
+    <section id="comments">
+        
+    </section>
+
+
+    
+
+</main>
+
+
+<aside style="" id="sidebar" class="aside aside-fixture">
+    <div class="toc-sidebar">
+        <nav id="toc" class="article-toc">
+            <h3 class="toc-title">文章目录</h3>
+            <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80-%E6%A6%82%E8%BF%B0"><span class="toc-number">1.</span> <span class="toc-text">一 概述</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C-stack"><span class="toc-number">2.</span> <span class="toc-text">二 stack</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89-%E7%A4%BA%E4%BE%8B"><span class="toc-number">3.</span> <span class="toc-text">三 示例</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-%E7%A8%8B%E5%BA%8F"><span class="toc-number">3.1.</span> <span class="toc-text">1. 程序</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E8%B0%83%E7%94%A8"><span class="toc-number">3.2.</span> <span class="toc-text">2. 调用</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9B%9B-%E5%87%BD%E6%95%B0%E8%AF%B4%E6%98%8E"><span class="toc-number">4.</span> <span class="toc-text">四 函数说明</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-%E6%A0%88%E9%A1%B6%E7%B4%A2%E5%BC%95%E6%93%8D%E4%BD%9C"><span class="toc-number">4.1.</span> <span class="toc-text">1. 栈顶索引操作</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E5%AD%97%E7%AC%A6%E4%B8%B2%E5%8E%8B%E5%85%A5%E6%A0%88"><span class="toc-number">4.2.</span> <span class="toc-text">2. 字符串压入栈</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-%E8%8E%B7%E5%BE%97%E6%A0%88%E9%A1%B6%E7%B4%A2%E5%BC%95"><span class="toc-number">4.3.</span> <span class="toc-text">3. 获得栈顶索引</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%94-%E5%8F%82%E8%80%83"><span class="toc-number">5.</span> <span class="toc-text">五 参考</span></a></li></ol>
+        </nav>
+    </div>
+</aside>
+
+
+
+
+
+        </section>
+        <footer class="hidden lg:block fixed bottom-0 left-0 sm:w-1/12 lg:w-1/6 bg-gray-100 z-40">
+    
+    <div class="footer-social-links">
+        
+            <a target="_blank" rel="noopener" href="https://github.com/juzipeek">
+                <i class="iconfont icon-github"></i>
+            </a>
+        
+    </div>
+    
+    
+</footer>
+
+        <div id="mask" class="hidden mask fixed inset-0 bg-gray-900 opacity-75 z-40"></div>
+        <div id="search-view-container" class="hidden shadow-xl"></div>
+        
+<script src="/js/dom-event.min.js"></script>
+
+
+
+<script src="/js/local-search.min.js"></script>
+
+
+
+    <script src="//cdn.jsdelivr.net/npm/lightgallery.js@1.1.3/dist/js/lightgallery.min.js"></script>
+    
+<script src="/js/light-gallery.min.js"></script>
+
+
+
+
+
+
+    </body>
+</html>

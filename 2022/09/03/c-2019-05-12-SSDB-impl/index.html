@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html  lang="zh-CN" >
+    <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, minimum-scale=1, initial-scale=1, maximum-scale=5, viewport-fit=cover">
+    <title>SSDB impl | 自留地</title>
+    <meta name="description" content="概述SSDB 使用 LevelDB 存储数据，读写数据直接使用 LevelDB 接口实现。在网络时间处理方面使用读&#x2F;写事件线程池提高处理性能，优先使用 epoll 作为事件处理器，否则降级为 select。 一 网络事件处理在 SSDB 中将事件抽象为 Fdevent 类型，时间处理抽象为 Fdevents。在 Fdevents 中使用 vector 保存需要监听的全部 Fdevent 事件（ev">
+<meta property="og:type" content="article">
+<meta property="og:title" content="SSDB impl">
+<meta property="og:url" content="https://juzipeek.github.io/2022/09/03/c-2019-05-12-SSDB-impl/index.html">
+<meta property="og:site_name" content="自留地">
+<meta property="og:description" content="概述SSDB 使用 LevelDB 存储数据，读写数据直接使用 LevelDB 接口实现。在网络时间处理方面使用读&#x2F;写事件线程池提高处理性能，优先使用 epoll 作为事件处理器，否则降级为 select。 一 网络事件处理在 SSDB 中将事件抽象为 Fdevent 类型，时间处理抽象为 Fdevents。在 Fdevents 中使用 vector 保存需要监听的全部 Fdevent 事件（ev">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2022-09-03T14:47:35.225Z">
+<meta property="article:modified_time" content="2022-09-03T14:47:35.225Z">
+<meta property="article:author" content="zhou cheng jie">
+<meta property="article:tag" content="C">
+<meta property="article:tag" content="CPP">
+<meta property="article:tag" content="LevelDB">
+<meta property="article:tag" content="SSDB">
+<meta name="twitter:card" content="summary">
+
+    
+    <link rel="icon" href="/images/favicon.ico" type="image/x-icon">
+
+    
+<link rel="stylesheet" href="/css/common.min.css">
+
+
+
+    
+    
+    
+    
+        <link href="//cdn.jsdelivr.net/npm/lightgallery.js@1.1.3/dist/css/lightgallery.min.css" rel="stylesheet">
+    
+    
+    
+<link rel="stylesheet" href="/css/iconfont.min.css">
+
+    
+    <script>
+        (function(e,t,n,i,s,a,c){e[n]=e[n]||function(){(e[n].q=e[n].q||[]).push(arguments)}
+        ;a=t.createElement(i);c=t.getElementsByTagName(i)[0];a.async=true;a.src=s
+        ;c.parentNode.insertBefore(a,c)
+        })(window,document,"galite","script","https://cdn.jsdelivr.net/npm/ga-lite@2/dist/ga-lite.min.js");
+
+        galite('create', 'G-HFGFGEWD53', 'auto');
+        galite('send', 'pageview');
+    </script>
+    
+<meta name="generator" content="Hexo 5.4.2"></head>
+
+    <body>
+        <header class="header header-fixture">
+    <div class="profile-search-wrap flex sm:block">
+        
+        
+        <div class="profile sm:text-center md:px-1 lg:px-3 sm:pb-4 sm:pt-6">
+            <a id="avatar" role="link" href="https://github.com/juzipeek" class="inline-block lg:w-16 lg:h-16 w-8 h-8 m-2" target="_blank" rel="noopener" rel="noreferrer" >
+                <img src="/images/yellow.jpg" class="rounded-full" alt="avatar">
+            </a>
+            <h2 id="name" class="hidden lg:block">zhou cheng jie</h2>
+            <h3 id="title" class="hidden lg:block">coder</h3>
+            
+            <small id="location" class="hidden lg:block">
+                <i class="iconfont icon-map-icon"></i>
+                BeiJing, China
+            </small>
+            
+        </div>
+        
+        
+<div class="search flex-1 flex lg:inline-block sm:hidden lg:px-4 lg:mt-2 lg:mb-4 lg:w-full">
+    <form id="search-form" class="my-auto flex-1 lg:border lg:border-solid lg:border-gray-200">
+        <div class="input-group table bg-gray-100 lg:bg-white w-full">
+            <input id="search-input" type="text" placeholder="搜索" class="inline-block w-full bg-gray-100 lg:bg-white p-1">
+            <span class="table-cell">
+                <button name="search tigger button" disabled>
+                    <i class="iconfont icon-search m-2"></i>
+                </button>
+            </span>
+        </div>
+    </form>
+        
+<div id="content-json" data-placeholder="搜索" class="invisible hidden">/content.json</div>
+<script id="search-teamplate" type="text/html" data-path="/content.json">
+    <div>
+        <div class="search-header bg-gray-400">
+            <input id="actual-search-input" model="keyword" ref="input" class="inline-block w-full h-10 px-2 py-1" placeholder="搜索" type="text">
+        </div>
+        <div class="search-result bg-gray-200">
+            {{#each searchPosts}}
+            <a href="/{{ path }}" class="result-item block px-2 pb-3 mb-1 pt-1 hover:bg-indigo-100">
+                <i class="iconfont icon-file"></i>
+                <h1 class="result-title inline font-medium text-lg">{{ title }}</h1>
+                <p class="result-content text-gray-600 text-sm">{{{ text }}}</p>
+            </a>
+            {{/each}}
+        </div>
+    </div>
+</script>
+
+</div>
+
+
+        <button name="menu toogle button" id="menu-toggle-btn" class="block sm:hidden p-3" role="button" aria-expanded="false">
+            <i class="iconfont icon-hamburger"></i>
+        </button>
+    </div>
+    <nav id="menu-nav" class="hidden sm:flex flex-col">
+        
+        
+            <div class="menu-item menu-home" role="menuitem">
+                <a href="/.">
+                    <i class="iconfont icon-home" aria-hidden="true"></i>
+                    <span class="menu-title">首页</span>
+                </a>
+            </div>
+        
+        
+            <div class="menu-item menu-archives" role="menuitem">
+                <a href="/archives">
+                    <i class="iconfont icon-archive" aria-hidden="true"></i>
+                    <span class="menu-title">归档</span>
+                </a>
+            </div>
+        
+        
+            <div class="menu-item menu-categories" role="menuitem">
+                <a href="/categories">
+                    <i class="iconfont icon-folder" aria-hidden="true"></i>
+                    <span class="menu-title">分类</span>
+                </a>
+            </div>
+        
+        
+            <div class="menu-item menu-tags" role="menuitem">
+                <a href="/tags">
+                    <i class="iconfont icon-tag" aria-hidden="true"></i>
+                    <span class="menu-title">标签</span>
+                </a>
+            </div>
+        
+        
+            <div class="menu-item menu-about" role="menuitem">
+                <a href="/about">
+                    <i class="iconfont icon-cup" aria-hidden="true"></i>
+                    <span class="menu-title">关于</span>
+                </a>
+            </div>
+        
+        
+<div class="social-links flex sm:flex-col lg:hidden mt-5">
+    
+        <span class="social-item text-center">
+            <a target="_blank" rel="noopener" href="https://github.com/juzipeek">
+                <i class="iconfont social-icon icon-github"></i>
+                <span class="menu-title hidden lg:inline">menu.github</span>
+            </a>
+        </span>
+    
+</div>
+
+
+    </nav>
+</header>
+
+        <section class="main-section">
+            
+    <main class="flex-1 px-4 py-14 md:px-5 lg:px-8 lg:py-4 relative min-h-screen">
+    
+
+    <article class="content article article-archives article-type-list" itemscope="">
+        <header class="article-header">
+            
+    
+        <h1 class="article-title text-lg" itemprop="name">
+            SSDB impl
+        </h1>
+    
+
+
+
+            <p class="article-meta mb-3 text-xs">
+                <span class="article-date">
+    <i class="iconfont icon-calendar-check"></i>
+	<a href="/2022/09/03/c-2019-05-12-SSDB-impl/" class="article-date">
+	  <time datetime="2022-09-03T14:47:35.225Z" itemprop="datePublished">9月 3</time>
+	</a>
+</span>
+
+                
+    <span class="article-category">
+    <i class="iconfont icon-folder"></i>
+    <a class="article-category-link" href="/categories/C/">C</a>
+  </span>
+
+
+                
+    <span class="article-tags">
+    <i class="iconfont icon-tag"></i>
+    <a class="article-tag-none-link" href="/tags/C/" rel="tag">C</a>, <a class="article-tag-none-link" href="/tags/CPP/" rel="tag">CPP</a>, <a class="article-tag-none-link" href="/tags/LevelDB/" rel="tag">LevelDB</a>, <a class="article-tag-none-link" href="/tags/SSDB/" rel="tag">SSDB</a>
+  </span>
+
+
+                <span class="_partial/post-comment"><i class="icon icon-comment"></i>
+                    <a href="/2022/09/03/c-2019-05-12-SSDB-impl/#comments" class="article-comment-link">
+                        评论
+                    </a>
+                </span>
+                
+    
+        <span class="post-wordcount" itemprop="wordCount">字数统计: 686(字)</span>
+    
+    
+        <span class="post-readcount" itemprop="timeRequired">阅读时长: 3(分)</span>
+    
+
+
+            </p>
+        </header>
+        <div class="marked-body article-body">
+            <h2 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h2><p>SSDB 使用 LevelDB 存储数据，读写数据直接使用 LevelDB 接口实现。在网络时间处理方面使用读/写事件线程池提高处理性能，优先使用 epoll 作为事件处理器，否则降级为 select。</p>
+<h2 id="一-网络事件处理"><a href="#一-网络事件处理" class="headerlink" title="一 网络事件处理"></a>一 网络事件处理</h2><p>在 SSDB 中将事件抽象为 <code>Fdevent</code> 类型，时间处理抽象为 <code>Fdevents</code>。在 <code>Fdevents</code> 中使用 <code>vector</code> 保存需要监听的全部 <code>Fdevent</code> 事件（events 中保存）、以及已经触发的 SSDB 指令事件（ready_events 中保存）。</p>
+<p>事件处理循环读起来有些混乱，在整个循环的前部分将需要处理的事件放入 <code>ready_events</code> 中，后半部分将 <code>ready_events</code> 中的事件匹配对应的 Redis 指令处理函数，并将其放入读/写事件处理线程池中。<strong>在线程池中，会将指令的处理结果发送给客户端</strong>。</p>
+<ul>
+<li><p><code>[ssdb]/src/net/server.cpp:serve()</code></p>
+<p>  事件处理主体</p>
+</li>
+<li><p><code>[ssdb]/src/net/server.cpp:serve()</code></p>
+<p>  <code>const Request *req = link-&gt;recv();</code>：指令解析</p>
+<p>  <code>int result=this-&gt;proc(job);</code>：将解析出来的指令作为任务添加到线程池中</p>
+<p>  <code>job-&gt;cmd = proc_map.get_proc(req-&gt;at(0));</code>：设置指令对应的处理函数指针</p>
+</li>
+</ul>
+<h2 id="二-指令处理"><a href="#二-指令处理" class="headerlink" title="二 指令处理"></a>二 指令处理</h2><p>在读/写线程池中，实际的指令处理函数为 <code>int ProcWorker::proc(ProcJob *job)</code>。所有的函数指针在 SSDBServer 对象创建阶段进行注册（通过 reg_procs 函数进行注册）。根据注册函数表可以找到对应的处理函数，例如注册 <code>REG_PROC(get, &quot;rt&quot;)</code> 找到处理函数为 <code>proc_get</code>，即可以跟踪指令处理。</p>
+<h3 id="1-set-指令处理"><a href="#1-set-指令处理" class="headerlink" title="1. set 指令处理"></a>1. set 指令处理</h3><p>函数调用顺序：proc_set() =&gt; serv-&gt;ssdb-&gt;set() =&gt; binlogs-&gt;Put()/add_log()/commit()<br>从上面的调用流程可以看出数据先保存在 binlog 中（LevelDB）实现。</p>
+<h3 id="2-get-指令处理"><a href="#2-get-指令处理" class="headerlink" title="2. get 指令处理"></a>2. get 指令处理</h3><p>函数调用顺序：proc_get() =&gt; serv-&gt;ssdb-&gt;get() =&gt; ldb-&gt;Get()<br>为什么在 <code>set</code> 指令中将数据保存在 binlog 中，而 <code>get</code> 指令却在 ldb 中进行数据查找？其实 binlog 底层使用 leveldb 进行数据存储，其使用的数据文件即 SSDBImpl::ldb 成员。</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">SSDB* <span class="title">SSDB::open</span><span class="params">(<span class="type">const</span> Options &amp;opt, <span class="type">const</span> std::string &amp;dir)</span></span>&#123;</span><br><span class="line">	SSDBImpl *ssdb = <span class="keyword">new</span> <span class="built_in">SSDBImpl</span>();</span><br><span class="line">	ssdb-&gt;options.max_file_size = <span class="number">32</span> * <span class="number">1048576</span>; <span class="comment">// leveldb 1.20</span></span><br><span class="line">	ssdb-&gt;options.create_if_missing = <span class="literal">true</span>;</span><br><span class="line">	ssdb-&gt;options.max_open_files = opt.max_open_files;</span><br><span class="line">	ssdb-&gt;options.filter_policy = leveldb::<span class="built_in">NewBloomFilterPolicy</span>(<span class="number">10</span>);</span><br><span class="line">	ssdb-&gt;options.block_cache = leveldb::<span class="built_in">NewLRUCache</span>(opt.cache_size * <span class="number">1048576</span>);</span><br><span class="line">	ssdb-&gt;options.block_size = opt.block_size * <span class="number">1024</span>;</span><br><span class="line">	ssdb-&gt;options.write_buffer_size = opt.write_buffer_size * <span class="number">1024</span> * <span class="number">1024</span>;</span><br><span class="line">	ssdb-&gt;options.compaction_speed = opt.compaction_speed;</span><br><span class="line">	<span class="keyword">if</span>(opt.compression == <span class="string">&quot;yes&quot;</span>)&#123;</span><br><span class="line">		ssdb-&gt;options.compression = leveldb::kSnappyCompression;</span><br><span class="line">	&#125;<span class="keyword">else</span>&#123;</span><br><span class="line">		ssdb-&gt;options.compression = leveldb::kNoCompression;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	leveldb::Status status;</span><br><span class="line"></span><br><span class="line">	status = leveldb::DB::<span class="built_in">Open</span>(ssdb-&gt;options, dir, &amp;ssdb-&gt;ldb);</span><br><span class="line">	<span class="keyword">if</span>(!status.<span class="built_in">ok</span>())&#123;</span><br><span class="line">		<span class="built_in">log_error</span>(<span class="string">&quot;open db failed: %s&quot;</span>, status.<span class="built_in">ToString</span>().<span class="built_in">c_str</span>());</span><br><span class="line">		<span class="keyword">goto</span> err;</span><br><span class="line">	&#125;</span><br><span class="line">    <span class="comment">// binlogs 底层使用 ldb 存储数据</span></span><br><span class="line">	ssdb-&gt;binlogs = <span class="keyword">new</span> <span class="built_in">BinlogQueue</span>(ssdb-&gt;ldb, opt.binlog, opt.binlog_capacity);</span><br><span class="line"></span><br><span class="line">	<span class="keyword">return</span> ssdb;</span><br><span class="line">err:</span><br><span class="line">	<span class="keyword">if</span>(ssdb)&#123;</span><br><span class="line">		<span class="keyword">delete</span> ssdb;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+        </div>
+        
+
+    </article>
+    
+    <section id="comments">
+        
+    </section>
+
+
+    
+
+</main>
+
+
+<aside style="" id="sidebar" class="aside aside-fixture">
+    <div class="toc-sidebar">
+        <nav id="toc" class="article-toc">
+            <h3 class="toc-title">文章目录</h3>
+            <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%A6%82%E8%BF%B0"><span class="toc-number">1.</span> <span class="toc-text">概述</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80-%E7%BD%91%E7%BB%9C%E4%BA%8B%E4%BB%B6%E5%A4%84%E7%90%86"><span class="toc-number">2.</span> <span class="toc-text">一 网络事件处理</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C-%E6%8C%87%E4%BB%A4%E5%A4%84%E7%90%86"><span class="toc-number">3.</span> <span class="toc-text">二 指令处理</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-set-%E6%8C%87%E4%BB%A4%E5%A4%84%E7%90%86"><span class="toc-number">3.1.</span> <span class="toc-text">1. set 指令处理</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-get-%E6%8C%87%E4%BB%A4%E5%A4%84%E7%90%86"><span class="toc-number">3.2.</span> <span class="toc-text">2. get 指令处理</span></a></li></ol></li></ol>
+        </nav>
+    </div>
+</aside>
+
+
+
+
+
+        </section>
+        <footer class="hidden lg:block fixed bottom-0 left-0 sm:w-1/12 lg:w-1/6 bg-gray-100 z-40">
+    
+    <div class="footer-social-links">
+        
+            <a target="_blank" rel="noopener" href="https://github.com/juzipeek">
+                <i class="iconfont icon-github"></i>
+            </a>
+        
+    </div>
+    
+    
+</footer>
+
+        <div id="mask" class="hidden mask fixed inset-0 bg-gray-900 opacity-75 z-40"></div>
+        <div id="search-view-container" class="hidden shadow-xl"></div>
+        
+<script src="/js/dom-event.min.js"></script>
+
+
+
+<script src="/js/local-search.min.js"></script>
+
+
+
+    <script src="//cdn.jsdelivr.net/npm/lightgallery.js@1.1.3/dist/js/lightgallery.min.js"></script>
+    
+<script src="/js/light-gallery.min.js"></script>
+
+
+
+
+
+
+    </body>
+</html>

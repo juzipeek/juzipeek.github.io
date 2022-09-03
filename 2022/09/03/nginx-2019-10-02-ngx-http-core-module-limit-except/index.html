@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html  lang="zh-CN" >
+    <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, minimum-scale=1, initial-scale=1, maximum-scale=5, viewport-fit=cover">
+    <title>ngx_http_core_module - limit_except | 自留地</title>
+    <meta name="description" content="一 概述limit_except 限制一个 location 内允许的 HTTP 方法。 二 指令123Syntax: 	limit_except method ... &amp;#123; ... &amp;#125;Default: 	—Context: 	location  可选的 method ：GET, HEAD, POST, PUT, DELETE, MKCOL, COPY, MOVE, OPTION">
+<meta property="og:type" content="article">
+<meta property="og:title" content="ngx_http_core_module - limit_except">
+<meta property="og:url" content="https://juzipeek.github.io/2022/09/03/nginx-2019-10-02-ngx-http-core-module-limit-except/index.html">
+<meta property="og:site_name" content="自留地">
+<meta property="og:description" content="一 概述limit_except 限制一个 location 内允许的 HTTP 方法。 二 指令123Syntax: 	limit_except method ... &amp;#123; ... &amp;#125;Default: 	—Context: 	location  可选的 method ：GET, HEAD, POST, PUT, DELETE, MKCOL, COPY, MOVE, OPTION">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2022-09-03T12:55:44.514Z">
+<meta property="article:modified_time" content="2022-09-03T12:55:44.514Z">
+<meta property="article:author" content="zhou cheng jie">
+<meta property="article:tag" content="C">
+<meta property="article:tag" content="NGINX">
+<meta name="twitter:card" content="summary">
+
+    
+    <link rel="icon" href="/images/favicon.ico" type="image/x-icon">
+
+    
+<link rel="stylesheet" href="/css/common.min.css">
+
+
+
+    
+    
+    
+    
+        <link href="//cdn.jsdelivr.net/npm/lightgallery.js@1.1.3/dist/css/lightgallery.min.css" rel="stylesheet">
+    
+    
+    
+<link rel="stylesheet" href="/css/iconfont.min.css">
+
+    
+    <script>
+        (function(e,t,n,i,s,a,c){e[n]=e[n]||function(){(e[n].q=e[n].q||[]).push(arguments)}
+        ;a=t.createElement(i);c=t.getElementsByTagName(i)[0];a.async=true;a.src=s
+        ;c.parentNode.insertBefore(a,c)
+        })(window,document,"galite","script","https://cdn.jsdelivr.net/npm/ga-lite@2/dist/ga-lite.min.js");
+
+        galite('create', 'G-HFGFGEWD53', 'auto');
+        galite('send', 'pageview');
+    </script>
+    
+<meta name="generator" content="Hexo 5.4.2"></head>
+
+    <body>
+        <header class="header header-fixture">
+    <div class="profile-search-wrap flex sm:block">
+        
+        
+        <div class="profile sm:text-center md:px-1 lg:px-3 sm:pb-4 sm:pt-6">
+            <a id="avatar" role="link" href="https://github.com/juzipeek" class="inline-block lg:w-16 lg:h-16 w-8 h-8 m-2" target="_blank" rel="noopener" rel="noreferrer" >
+                <img src="/images/yellow.jpg" class="rounded-full" alt="avatar">
+            </a>
+            <h2 id="name" class="hidden lg:block">zhou cheng jie</h2>
+            <h3 id="title" class="hidden lg:block">coder</h3>
+            
+            <small id="location" class="hidden lg:block">
+                <i class="iconfont icon-map-icon"></i>
+                BeiJing, China
+            </small>
+            
+        </div>
+        
+        
+<div class="search flex-1 flex lg:inline-block sm:hidden lg:px-4 lg:mt-2 lg:mb-4 lg:w-full">
+    <form id="search-form" class="my-auto flex-1 lg:border lg:border-solid lg:border-gray-200">
+        <div class="input-group table bg-gray-100 lg:bg-white w-full">
+            <input id="search-input" type="text" placeholder="搜索" class="inline-block w-full bg-gray-100 lg:bg-white p-1">
+            <span class="table-cell">
+                <button name="search tigger button" disabled>
+                    <i class="iconfont icon-search m-2"></i>
+                </button>
+            </span>
+        </div>
+    </form>
+        
+<div id="content-json" data-placeholder="搜索" class="invisible hidden">/content.json</div>
+<script id="search-teamplate" type="text/html" data-path="/content.json">
+    <div>
+        <div class="search-header bg-gray-400">
+            <input id="actual-search-input" model="keyword" ref="input" class="inline-block w-full h-10 px-2 py-1" placeholder="搜索" type="text">
+        </div>
+        <div class="search-result bg-gray-200">
+            {{#each searchPosts}}
+            <a href="/{{ path }}" class="result-item block px-2 pb-3 mb-1 pt-1 hover:bg-indigo-100">
+                <i class="iconfont icon-file"></i>
+                <h1 class="result-title inline font-medium text-lg">{{ title }}</h1>
+                <p class="result-content text-gray-600 text-sm">{{{ text }}}</p>
+            </a>
+            {{/each}}
+        </div>
+    </div>
+</script>
+
+</div>
+
+
+        <button name="menu toogle button" id="menu-toggle-btn" class="block sm:hidden p-3" role="button" aria-expanded="false">
+            <i class="iconfont icon-hamburger"></i>
+        </button>
+    </div>
+    <nav id="menu-nav" class="hidden sm:flex flex-col">
+        
+        
+            <div class="menu-item menu-home" role="menuitem">
+                <a href="/.">
+                    <i class="iconfont icon-home" aria-hidden="true"></i>
+                    <span class="menu-title">首页</span>
+                </a>
+            </div>
+        
+        
+            <div class="menu-item menu-archives" role="menuitem">
+                <a href="/archives">
+                    <i class="iconfont icon-archive" aria-hidden="true"></i>
+                    <span class="menu-title">归档</span>
+                </a>
+            </div>
+        
+        
+            <div class="menu-item menu-categories" role="menuitem">
+                <a href="/categories">
+                    <i class="iconfont icon-folder" aria-hidden="true"></i>
+                    <span class="menu-title">分类</span>
+                </a>
+            </div>
+        
+        
+            <div class="menu-item menu-tags" role="menuitem">
+                <a href="/tags">
+                    <i class="iconfont icon-tag" aria-hidden="true"></i>
+                    <span class="menu-title">标签</span>
+                </a>
+            </div>
+        
+        
+            <div class="menu-item menu-about" role="menuitem">
+                <a href="/about">
+                    <i class="iconfont icon-cup" aria-hidden="true"></i>
+                    <span class="menu-title">关于</span>
+                </a>
+            </div>
+        
+        
+<div class="social-links flex sm:flex-col lg:hidden mt-5">
+    
+        <span class="social-item text-center">
+            <a target="_blank" rel="noopener" href="https://github.com/juzipeek">
+                <i class="iconfont social-icon icon-github"></i>
+                <span class="menu-title hidden lg:inline">menu.github</span>
+            </a>
+        </span>
+    
+</div>
+
+
+    </nav>
+</header>
+
+        <section class="main-section">
+            
+    <main class="flex-1 px-4 py-14 md:px-5 lg:px-8 lg:py-4 relative min-h-screen">
+    
+
+    <article class="content article article-archives article-type-list" itemscope="">
+        <header class="article-header">
+            
+    
+        <h1 class="article-title text-lg" itemprop="name">
+            ngx_http_core_module - limit_except
+        </h1>
+    
+
+
+
+            <p class="article-meta mb-3 text-xs">
+                <span class="article-date">
+    <i class="iconfont icon-calendar-check"></i>
+	<a href="/2022/09/03/nginx-2019-10-02-ngx-http-core-module-limit-except/" class="article-date">
+	  <time datetime="2022-09-03T12:55:44.514Z" itemprop="datePublished">9月 3</time>
+	</a>
+</span>
+
+                
+    <span class="article-category">
+    <i class="iconfont icon-folder"></i>
+    <a class="article-category-link" href="/categories/NGINX/">NGINX</a>
+  </span>
+
+
+                
+    <span class="article-tags">
+    <i class="iconfont icon-tag"></i>
+    <a class="article-tag-none-link" href="/tags/C/" rel="tag">C</a>, <a class="article-tag-none-link" href="/tags/NGINX/" rel="tag">NGINX</a>
+  </span>
+
+
+                <span class="_partial/post-comment"><i class="icon icon-comment"></i>
+                    <a href="/2022/09/03/nginx-2019-10-02-ngx-http-core-module-limit-except/#comments" class="article-comment-link">
+                        评论
+                    </a>
+                </span>
+                
+    
+        <span class="post-wordcount" itemprop="wordCount">字数统计: 678(字)</span>
+    
+    
+        <span class="post-readcount" itemprop="timeRequired">阅读时长: 3(分)</span>
+    
+
+
+            </p>
+        </header>
+        <div class="marked-body article-body">
+            <h2 id="一-概述"><a href="#一-概述" class="headerlink" title="一 概述"></a>一 概述</h2><p><code>limit_except</code> 限制一个 <code>location</code> 内允许的 HTTP 方法。</p>
+<h2 id="二-指令"><a href="#二-指令" class="headerlink" title="二 指令"></a>二 指令</h2><figure class="highlight nginx"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Syntax: 	<span class="attribute">limit_except</span> method ... &#123; ... &#125;</span><br><span class="line">Default: 	—</span><br><span class="line">Context: 	<span class="section">location</span></span><br></pre></td></tr></table></figure>
+
+<p>可选的 <code>method</code> ：GET, HEAD, POST, PUT, DELETE, MKCOL, COPY, MOVE, OPTIONS, PROPFIND, PROPPATCH, LOCK, UNLOCK, PATCH。示例：</p>
+<figure class="highlight nginx"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="attribute">limit_except</span> GET &#123;</span><br><span class="line">    <span class="attribute">allow</span> <span class="number">192.168.1.0</span>/<span class="number">32</span>;</span><br><span class="line">    <span class="attribute">deny</span>  all;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>配置含义是允许所有的 <code>GET</code>（<code>HEAD</code>） 请求，其他类型的请求如果来源非 <code>192.168.1.0/32</code> 则禁止访问。</p>
+<p>如果使用 <code>POST</code> 方式进行请求会返回：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">403 Forbidden</span><br></pre></td></tr></table></figure>
+
+<h2 id="三-实现"><a href="#三-实现" class="headerlink" title="三 实现"></a>三 实现</h2><p>其实 <code>limit_except</code> 指令主要是根据方法使用不同的 <code>loc_conf</code> 配置项。<code>ngx_http_update_location_config</code> 会根据请求方法判断是否需要更新请求的 <code>loc_conf</code>。当时有 <code>limit_except</code> 配置的 <code>loc_conf</code> 后，在 <code>ngx_http_access_module</code> 模块会对请求客户端地址进行判断。</p>
+<p>指令处理：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">static</span> <span class="type">char</span> *</span><br><span class="line"><span class="title function_">ngx_http_core_limit_except</span><span class="params">(<span class="type">ngx_conf_t</span> *cf, <span class="type">ngx_command_t</span> *cmd, <span class="type">void</span> *conf)</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="type">ngx_http_core_loc_conf_t</span> *pclcf = conf;</span><br><span class="line"></span><br><span class="line">    <span class="type">char</span>                      *rv;</span><br><span class="line">    <span class="type">void</span>                      *mconf;</span><br><span class="line">    <span class="type">ngx_str_t</span>                 *value;</span><br><span class="line">    <span class="type">ngx_uint_t</span>                 i;</span><br><span class="line">    <span class="type">ngx_conf_t</span>                 save;</span><br><span class="line">    <span class="type">ngx_http_module_t</span>         *module;</span><br><span class="line">    <span class="type">ngx_http_conf_ctx_t</span>       *ctx, *pctx;</span><br><span class="line">    <span class="type">ngx_http_method_name_t</span>    *name;</span><br><span class="line">    <span class="type">ngx_http_core_loc_conf_t</span>  *clcf;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (pclcf-&gt;limit_except) &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="string">&quot;duplicate&quot;</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    pclcf-&gt;limit_except = <span class="number">0xffffffff</span>;</span><br><span class="line"></span><br><span class="line">    value = cf-&gt;args-&gt;elts;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> (i = <span class="number">1</span>; i &lt; cf-&gt;args-&gt;nelts; i++) &#123;</span><br><span class="line">        <span class="keyword">for</span> (name = ngx_methods_names; name-&gt;name; name++) &#123;</span><br><span class="line"></span><br><span class="line">            <span class="keyword">if</span> (ngx_strcasecmp(value[i].data, name-&gt;name) == <span class="number">0</span>) &#123;</span><br><span class="line">                pclcf-&gt;limit_except &amp;= name-&gt;method;</span><br><span class="line">                <span class="keyword">goto</span> next;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        ngx_conf_log_error(NGX_LOG_EMERG, cf, <span class="number">0</span>,</span><br><span class="line">                           <span class="string">&quot;invalid method \&quot;%V\&quot;&quot;</span>, &amp;value[i]);</span><br><span class="line">        <span class="keyword">return</span> NGX_CONF_ERROR;</span><br><span class="line"></span><br><span class="line">    next:</span><br><span class="line">        <span class="keyword">continue</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (!(pclcf-&gt;limit_except &amp; NGX_HTTP_GET)) &#123;</span><br><span class="line">        pclcf-&gt;limit_except &amp;= (<span class="type">uint32_t</span>) ~NGX_HTTP_HEAD;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    ctx = ngx_pcalloc(cf-&gt;pool, <span class="keyword">sizeof</span>(<span class="type">ngx_http_conf_ctx_t</span>));</span><br><span class="line">    <span class="keyword">if</span> (ctx == <span class="literal">NULL</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span> NGX_CONF_ERROR;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    pctx = cf-&gt;ctx;</span><br><span class="line">    ctx-&gt;main_conf = pctx-&gt;main_conf;</span><br><span class="line">    ctx-&gt;srv_conf = pctx-&gt;srv_conf;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 创建新的 loc_conf 配置</span></span><br><span class="line">    ctx-&gt;loc_conf = ngx_pcalloc(cf-&gt;pool, <span class="keyword">sizeof</span>(<span class="type">void</span> *) * ngx_http_max_module);</span><br><span class="line">    <span class="keyword">if</span> (ctx-&gt;loc_conf == <span class="literal">NULL</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span> NGX_CONF_ERROR;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> (i = <span class="number">0</span>; cf-&gt;cycle-&gt;modules[i]; i++) &#123;</span><br><span class="line">        <span class="keyword">if</span> (cf-&gt;cycle-&gt;modules[i]-&gt;type != NGX_HTTP_MODULE) &#123;</span><br><span class="line">            <span class="keyword">continue</span>;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        module = cf-&gt;cycle-&gt;modules[i]-&gt;ctx;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (module-&gt;create_loc_conf) &#123;</span><br><span class="line"></span><br><span class="line">            mconf = module-&gt;create_loc_conf(cf);</span><br><span class="line">            <span class="keyword">if</span> (mconf == <span class="literal">NULL</span>) &#123;</span><br><span class="line">                <span class="keyword">return</span> NGX_CONF_ERROR;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            ctx-&gt;loc_conf[cf-&gt;cycle-&gt;modules[i]-&gt;ctx_index] = mconf;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">    clcf = ctx-&gt;loc_conf[ngx_http_core_module.ctx_index];</span><br><span class="line">    pclcf-&gt;limit_except_loc_conf = ctx-&gt;loc_conf;</span><br><span class="line">    clcf-&gt;loc_conf = ctx-&gt;loc_conf;</span><br><span class="line">    clcf-&gt;name = pclcf-&gt;name;</span><br><span class="line">    clcf-&gt;noname = <span class="number">1</span>;</span><br><span class="line">    clcf-&gt;lmt_excpt = <span class="number">1</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (ngx_http_add_location(cf, &amp;pclcf-&gt;locations, clcf) != NGX_OK) &#123;</span><br><span class="line">        <span class="keyword">return</span> NGX_CONF_ERROR;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 使用新的 loc_conf 进行解析,解析 deny、allow 指令。</span></span><br><span class="line">    <span class="comment">// 其实 limit_except 指令主要是根据方法使用不同的 loc_conf 配置项。</span></span><br><span class="line">    <span class="comment">// ngx_http_update_location_config 会根据请求方法判断是否需要更新请求的 loc_conf </span></span><br><span class="line">    save = *cf;</span><br><span class="line">    cf-&gt;ctx = ctx;</span><br><span class="line">    cf-&gt;cmd_type = NGX_HTTP_LMT_CONF;</span><br><span class="line">		<span class="comment">// 对 limit_except &#123;&#125; 进行指令处理</span></span><br><span class="line">    <span class="comment">// 只有 allow、deny 可以在 LMT_CONF 中配置</span></span><br><span class="line">    rv = ngx_conf_parse(cf, <span class="literal">NULL</span>);</span><br><span class="line"></span><br><span class="line">    *cf = save;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> rv;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>在请求处理过程中更新请求配置：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">void</span></span><br><span class="line"><span class="title function_">ngx_http_update_location_config</span><span class="params">(<span class="type">ngx_http_request_t</span> *r)</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="type">ngx_http_core_loc_conf_t</span>  *clcf;</span><br><span class="line"></span><br><span class="line">    clcf = ngx_http_get_module_loc_conf(r, ngx_http_core_module);</span><br><span class="line">		<span class="comment">// 更新配置</span></span><br><span class="line">    <span class="keyword">if</span> (r-&gt;method &amp; clcf-&gt;limit_except) &#123;</span><br><span class="line">        r-&gt;loc_conf = clcf-&gt;limit_except_loc_conf;</span><br><span class="line">        clcf = ngx_http_get_module_loc_conf(r, ngx_http_core_module);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// ... 省略其他代码</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p><code>allow</code>、<code>deny</code> 指令定义：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">static</span> <span class="type">ngx_command_t</span>  ngx_http_access_commands[] = &#123;</span><br><span class="line">    <span class="comment">// 可以出来 NGX_HTTP_LMT_CONF 块内配置</span></span><br><span class="line">    &#123; ngx_string(<span class="string">&quot;allow&quot;</span>),</span><br><span class="line">      NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_HTTP_LMT_CONF</span><br><span class="line">                        |NGX_CONF_TAKE1,</span><br><span class="line">      ngx_http_access_rule,</span><br><span class="line">      NGX_HTTP_LOC_CONF_OFFSET,</span><br><span class="line">      <span class="number">0</span>,</span><br><span class="line">      <span class="literal">NULL</span> &#125;,</span><br><span class="line"></span><br><span class="line">    &#123; ngx_string(<span class="string">&quot;deny&quot;</span>),</span><br><span class="line">      NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_HTTP_LMT_CONF</span><br><span class="line">                        |NGX_CONF_TAKE1,</span><br><span class="line">      ngx_http_access_rule,</span><br><span class="line">      NGX_HTTP_LOC_CONF_OFFSET,</span><br><span class="line">      <span class="number">0</span>,</span><br><span class="line">      <span class="literal">NULL</span> &#125;,</span><br><span class="line"></span><br><span class="line">      ngx_null_command</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+
+        </div>
+        
+
+    </article>
+    
+    <section id="comments">
+        
+    </section>
+
+
+    
+
+</main>
+
+
+<aside style="" id="sidebar" class="aside aside-fixture">
+    <div class="toc-sidebar">
+        <nav id="toc" class="article-toc">
+            <h3 class="toc-title">文章目录</h3>
+            <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80-%E6%A6%82%E8%BF%B0"><span class="toc-number">1.</span> <span class="toc-text">一 概述</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C-%E6%8C%87%E4%BB%A4"><span class="toc-number">2.</span> <span class="toc-text">二 指令</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89-%E5%AE%9E%E7%8E%B0"><span class="toc-number">3.</span> <span class="toc-text">三 实现</span></a></li></ol>
+        </nav>
+    </div>
+</aside>
+
+
+
+
+
+        </section>
+        <footer class="hidden lg:block fixed bottom-0 left-0 sm:w-1/12 lg:w-1/6 bg-gray-100 z-40">
+    
+    <div class="footer-social-links">
+        
+            <a target="_blank" rel="noopener" href="https://github.com/juzipeek">
+                <i class="iconfont icon-github"></i>
+            </a>
+        
+    </div>
+    
+    
+</footer>
+
+        <div id="mask" class="hidden mask fixed inset-0 bg-gray-900 opacity-75 z-40"></div>
+        <div id="search-view-container" class="hidden shadow-xl"></div>
+        
+<script src="/js/dom-event.min.js"></script>
+
+
+
+<script src="/js/local-search.min.js"></script>
+
+
+
+    <script src="//cdn.jsdelivr.net/npm/lightgallery.js@1.1.3/dist/js/lightgallery.min.js"></script>
+    
+<script src="/js/light-gallery.min.js"></script>
+
+
+
+
+
+
+    </body>
+</html>

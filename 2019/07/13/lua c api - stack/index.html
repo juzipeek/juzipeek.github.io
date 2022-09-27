@@ -3,12 +3,12 @@
     <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, minimum-scale=1, initial-scale=1, maximum-scale=5, viewport-fit=cover">
-    <title>lua c api - stack | 自留地</title>
+    <title>lua c api - stack | 自说自话</title>
     <meta name="description" content="一 概述《lua c api》系列文章描述的是 C 语言作为宿主语言，与 Lua 程序通讯的 API 接口。 二 stackLua 使用虚拟的栈与宿主 C 语言进行通讯，在栈中的每个元素都是 Lua 识别的数据类型。每当 Lua 调用 C 时，被调用的 C 函数都会得到一个新的栈，该栈独立于以前的栈和仍处于活跃状态的 C 函数栈。在此堆栈包含 lua 调用 C 函数的所有参数，C 函数应该将需要返">
 <meta property="og:type" content="article">
 <meta property="og:title" content="lua c api - stack">
 <meta property="og:url" content="https://juzipeek.github.io/2019/07/13/lua%20c%20api%20-%20stack/index.html">
-<meta property="og:site_name" content="自留地">
+<meta property="og:site_name" content="自说自话">
 <meta property="og:description" content="一 概述《lua c api》系列文章描述的是 C 语言作为宿主语言，与 Lua 程序通讯的 API 接口。 二 stackLua 使用虚拟的栈与宿主 C 语言进行通讯，在栈中的每个元素都是 Lua 识别的数据类型。每当 Lua 调用 C 时，被调用的 C 函数都会得到一个新的栈，该栈独立于以前的栈和仍处于活跃状态的 C 函数栈。在此堆栈包含 lua 调用 C 函数的所有参数，C 函数应该将需要返">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2019-07-12T16:00:00.000Z">
